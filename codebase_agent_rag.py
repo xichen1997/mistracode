@@ -581,6 +581,114 @@ class CodebaseAgentRAG:
             for chunk_type, count in stats['chunk_types'].items():
                 console.print(f"  {chunk_type}: {count}")
     
+    def should_use_rag(self, query: str) -> bool:
+        """智能判断查询是否需要使用 RAG 搜索"""
+        query_lower = query.lower().strip()
+        
+        # 如果查询很短（少于3个字符），通常不需要 RAG
+        if len(query_lower) < 3:
+            return False
+        
+        # 快速检查：明显的问候语
+        greetings = ['你好', 'hi', 'hello', '再见', 'bye', '谢谢', 'thanks']
+        if any(greeting in query_lower for greeting in greetings):
+            return False
+        
+        # 快速检查：明显的代码相关问题
+        code_indicators = [
+            '这个函数', '这个类', '这个方法', '这个文件', '这个代码',
+            '代码中', '项目中', '文件里', '函数里', '类里',
+            '查找', '搜索', '找到', '定位', '位置', '行号',
+            '错误', 'bug', '问题', '异常', '修复'
+        ]
+        if any(indicator in query_lower for indicator in code_indicators):
+            return True
+        
+        # 需要 LLM 判断的模糊情况
+        ambiguous_indicators = [
+            '如何实现', '如何运行', '如何调试', '如何修复', '如何优化',
+            '这个功能', '这个程序', '这个项目', '这个系统'
+        ]
+        if any(indicator in query_lower for indicator in ambiguous_indicators):
+            # 这些情况需要 LLM 判断
+            pass
+        
+        # 快速检查：文件扩展名
+        if any(ext in query_lower for ext in ['.py', '.js', '.java', '.cpp', '.c', '.h', '.ts', '.vue', '.go', '.rs']):
+            return True
+        
+        # 快速检查：编程语法
+        if any(char in query_lower for char in ['(', ')', '{', '}', '[', ']', ';', ':', '=', '==', '!=']):
+            return True
+        
+        # 使用 LLM 进行智能判断
+        return self._llm_judge_rag_need(query)
+    
+    def _llm_judge_rag_need(self, query: str) -> bool:
+        """使用 LLM 判断是否需要 RAG"""
+        prompt = f"""你是一个智能助手，需要判断用户的问题是否需要搜索当前代码库来回答。
+
+用户问题: {query}
+
+请仔细分析这个问题是否需要搜索当前代码库中的具体代码、函数、类、文件或项目相关内容来回答。
+
+判断标准：
+1. 回答 "RAG" 如果问题询问：
+   - 当前代码库中的具体函数、类、方法、文件
+   - 当前项目的结构、配置、依赖
+   - 当前代码中的错误、bug、问题
+   - 当前项目的运行方式、部署方式
+   - 当前代码库中的具体实现细节
+   - 当前项目的功能、特性
+
+2. 回答 "DIRECT" 如果问题询问：
+   - 通用编程概念、理论、原理
+   - 通用编程技能、学习方法
+   - 通用技术知识、概念解释
+   - 与当前代码库无关的一般性问题
+
+特别注意：
+- "如何实现这个功能？" 如果指当前项目的功能，回答 "RAG"
+- "如何运行这个程序？" 如果指当前项目，回答 "RAG"
+- "如何调试代码？" 如果是通用技能，回答 "DIRECT"
+
+只回答 "RAG" 或 "DIRECT"，不要其他内容。"""
+
+        try:
+            response = self.client.generate(prompt, temperature=0.1, max_tokens=10)
+            response = response.strip().upper()
+            
+            # 解析响应
+            if 'RAG' in response:
+                console.print(f"[dim]🤖 LLM 判断: RAG (需要搜索代码库) - 响应: '{response}'[/dim]")
+                return True
+            elif 'DIRECT' in response:
+                console.print(f"[dim]🤖 LLM 判断: DIRECT (直接回答) - 响应: '{response}'[/dim]")
+                return False
+            else:
+                # 如果 LLM 回答不明确，使用保守策略
+                console.print(f"[dim]🤖 LLM 回答不明确: '{response}'，使用保守策略[/dim]")
+                return False
+                
+        except Exception as e:
+            # 如果 LLM 调用失败，使用保守策略
+            console.print(f"[yellow]LLM 判断失败，使用保守策略: {str(e)}[/yellow]")
+            return False
+    
+    def chat_direct(self, query: str) -> str:
+        """直接回答，不使用 RAG"""
+        prompt = f"""你是一个友好的AI助手。请用中文回答用户的问题。
+
+用户问题: {query}
+
+请提供有用、准确的回答。如果问题涉及编程或技术，请提供一般性的指导和建议。"""
+        
+        try:
+            response = self.client.generate(prompt, temperature=0.7, max_tokens=1500)
+            return response
+        except Exception as e:
+            return f"[red]错误: {str(e)}[/red]"
+    
     def explain_code_rag(self, query: str, n_results: int = 10) -> str:
         """使用 RAG 解释代码"""
         console.print(f"\n[bold cyan]正在搜索相关代码...[/bold cyan]")
@@ -906,6 +1014,39 @@ def clear(agent, yes):
 
 
 @cli.command()
+@click.argument('query')
+@click.pass_obj
+def test_rag_decision(agent, query):
+    """测试 RAG 决策功能"""
+    console.print(f"\n[bold cyan]查询: {query}[/bold cyan]")
+    console.print("[dim]正在分析...[/dim]")
+    
+    use_rag = agent.should_use_rag(query)
+    
+    console.print(f"[bold]RAG 决策: {'🔍 使用 RAG' if use_rag else '💬 直接回答'}[/bold]")
+    
+    if use_rag:
+        console.print("[yellow]原因: 检测到代码相关问题[/yellow]")
+    else:
+        console.print("[yellow]原因: 检测到一般性问题[/yellow]")
+
+
+@cli.command()
+@click.argument('query')
+@click.pass_obj
+def debug_llm_judgment(agent, query):
+    """调试 LLM 判断功能"""
+    console.print(f"\n[bold cyan]调试 LLM 判断[/bold cyan]")
+    console.print(f"查询: {query}")
+    console.print("=" * 50)
+    
+    # 直接调用 LLM 判断
+    result = agent._llm_judge_rag_need(query)
+    
+    console.print(f"\n[bold]最终结果: {'🔍 RAG' if result else '💬 DIRECT'}[/bold]")
+
+
+@cli.command()
 @click.option('--results', '-n', default=10, help='使用的搜索结果数量')
 @click.pass_obj
 def chat(agent, results):
@@ -925,6 +1066,10 @@ def chat(agent, results):
         f"[dim]输入 'exit' 或 'quit' 退出[/dim]",
         border_style="cyan"
     ))
+    
+    # 强制模式标志
+    force_rag = False
+    force_direct = False
     
     while True:
         try:
@@ -949,14 +1094,44 @@ def chat(agent, results):
                     console.print("  /stats - 显示索引统计")
                     console.print("  /help - 显示帮助")
                     console.print("  /clear - 清屏")
+                    console.print("  /rag - 强制使用 RAG 搜索")
+                    console.print("  /direct - 强制直接回答")
                 elif command == 'clear':
                     console.clear()
+                elif command == 'rag':
+                    # 强制使用 RAG 搜索下一个查询
+                    console.print("[yellow]已设置强制使用 RAG 搜索模式[/yellow]")
+                    force_rag = True
+                    continue
+                elif command == 'direct':
+                    # 强制直接回答下一个查询
+                    console.print("[yellow]已设置强制直接回答模式[/yellow]")
+                    force_direct = True
+                    continue
                 else:
                     console.print(f"[red]未知命令: {command}[/red]")
                 
                 continue
             
-            result = agent.explain_code_rag(query, n_results=results)
+            # 智能判断是否需要使用 RAG
+            if force_rag:
+                console.print("[cyan]🔍 强制使用 RAG 搜索...[/cyan]")
+                result = agent.explain_code_rag(query, n_results=results)
+                force_rag = False  # 重置强制模式
+            elif force_direct:
+                console.print("[cyan]💬 强制直接回答...[/cyan]")
+                result = agent.chat_direct(query)
+                force_direct = False  # 重置强制模式
+            else:
+                console.print("[dim]🤔 正在分析查询类型...[/dim]")
+                use_rag = agent.should_use_rag(query)
+                if use_rag:
+                    console.print("[cyan]🔍 检测到代码相关问题，使用 RAG 搜索...[/cyan]")
+                    result = agent.explain_code_rag(query, n_results=results)
+                else:
+                    console.print("[cyan]💬 检测到一般性问题，直接回答...[/cyan]")
+                    result = agent.chat_direct(query)
+            
             console.print("\n")
             console.print(Panel(result, title="[bold green]回答[/bold green]",
                               title_align="left", border_style="green"))
