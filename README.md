@@ -213,6 +213,43 @@ ollama serve
 # 重新索引
 ./codebase-agent-rag index --force
 ```
+## DEBUG 工具
+
+● 现在您可以使用这些调试工具来查看索引的详细信息：
+
+  1. 查看所有检查（推荐先用这个）：
+  python debug_utilities.py all
+
+  2. 检查集合基本信息：
+  python debug_utilities.py inspect
+
+  3. 查看样本文档：
+  python debug_utilities.py samples --limit 10
+
+  4. 分析文件分布：
+  python debug_utilities.py distribution
+
+  5. 调试搜索功能：
+  python debug_utilities.py search-debug "your query"
+
+  6. 查看文件哈希缓存：
+  python debug_utilities.py hashes
+
+  7. 验证索引完整性：
+  python debug_utilities.py validate
+
+  8. 导出索引数据到 JSON：
+  python debug_utilities.py export --output my_index.json
+
+  这些工具可以帮助您：
+  - 查看索引中有多少文档和文件
+  - 检查元数据字段是否正确
+  - 验证搜索功能是否正常工作
+  - 发现索引中的问题
+  - 导出数据进行进一步分析
+
+  试试运行 python debug_utilities.py all 来获得完整的索引概览！
+
 
 ## 开发路线图
 

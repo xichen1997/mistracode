@@ -28,7 +28,7 @@ console = Console()
 class OllamaClient:
     """Ollama API 客户端"""
     
-    def __init__(self, base_url: str = "http://localhost:11434", model: str = "deepseek-coder:6.7b"):
+    def __init__(self, base_url: str = "http://localhost:11434", model: str = "devstral:latest"):
         self.base_url = base_url
         self.model = model
         
@@ -136,7 +136,7 @@ class CodeParser:
                         metadata={
                             "name": node.name,
                             "docstring": docstring,
-                            "args": [arg.arg for arg in node.args.args]
+                            "args": ", ".join([arg.arg for arg in node.args.args])
                         }
                     )
                     chunks.append(chunk)
@@ -162,7 +162,7 @@ class CodeParser:
                         metadata={
                             "name": node.name,
                             "docstring": docstring,
-                            "methods": [m.name for m in node.body if isinstance(m, ast.FunctionDef)]
+                            "methods": ", ".join([m.name for m in node.body if isinstance(m, ast.FunctionDef)])
                         }
                     )
                     chunks.append(chunk)
@@ -438,7 +438,7 @@ class CodebaseRAG:
 class CodebaseAgentRAG:
     """支持 RAG 的代码库智能助手"""
     
-    def __init__(self, model: str = "deepseek-coder:6.7b", 
+    def __init__(self, model: str = "devstral:latest", 
                  base_url: str = "http://localhost:11434",
                  index_dir: str = ".codebase_index"):
         self.client = OllamaClient(base_url=base_url, model=model)
@@ -457,11 +457,14 @@ class CodebaseAgentRAG:
         
         # 忽略的目录
         self.ignore_dirs = {
-            '.git', '__pycache__', 'node_modules', '.venv', 'venv',
-            'env', 'dist', 'build', '.idea', '.vscode', 'target',
+            '.git', '__pycache__', 'node_modules', '.venv', 'venv', 'venv_rag',
+            'env', 'env_rag', 'virtualenv', 'conda', 'miniconda', 'anaconda',
+            'dist', 'build', '.idea', '.vscode', 'target',
             'bin', 'obj', '.pytest_cache', '.mypy_cache', '.tox',
             'coverage', '.coverage', 'htmlcov', '.sass-cache',
-            '.codebase_index'  # 忽略索引目录
+            '.codebase_index',  # 忽略索引目录
+            'site-packages', 'lib64', 'include', 'share',  # 虚拟环境常见目录
+            '.DS_Store', 'Thumbs.db'  # 系统文件
         }
         
         # 检查 Ollama 连接
@@ -473,7 +476,7 @@ class CodebaseAgentRAG:
             models = self.client.list_models()
             if not models:
                 console.print("[yellow]警告: Ollama 中没有安装任何模型[/yellow]")
-                console.print("[cyan]请运行: ollama pull deepseek-coder:6.7b[/cyan]")
+                console.print("[cyan]请运行: ollama pull devstral:latest[/cyan]")
             elif self.model not in models:
                 console.print(f"[yellow]警告: 模型 {self.model} 未安装[/yellow]")
                 console.print(f"[cyan]可用模型: {', '.join(models)}[/cyan]")
@@ -734,7 +737,7 @@ class CodebaseAgentRAG:
 
 # CLI 部分
 @click.group()
-@click.option('--model', '-m', default='deepseek-coder:6.7b', help='Ollama 模型名称')
+@click.option('--model', '-m', default='devstral:latest', help='Ollama 模型名称')
 @click.option('--base-url', default='http://localhost:11434', help='Ollama API 地址')
 @click.option('--index-dir', default='.codebase_index', help='索引存储目录')
 @click.pass_context
