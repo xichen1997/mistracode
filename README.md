@@ -2,6 +2,22 @@
 
 基于向量检索增强生成（RAG）的智能代码库助手，使用 Ollama 本地运行，提供更准确的代码理解和分析能力。
 
+## 📋 目录
+
+- [🚀 新功能特性](#-新功能特性)
+- [安装](#安装)
+- [快速开始](#快速开始)
+- [🛠️ Makefile 构建系统](#️-makefile-构建系统)
+- [工作原理](#工作原理)
+- [高级功能](#高级功能)
+- [性能优化](#性能优化)
+- [常见问题](#常见问题)
+- [与基础版本对比](#与基础版本对比)
+- [故障排除](#故障排除)
+- [DEBUG 工具](#debug-工具)
+- [开发路线图](#开发路线图)
+- [贡献](#贡献)
+
 ## 🚀 新功能特性
 
 ### RAG 增强功能
@@ -101,6 +117,115 @@ chmod +x setup_rag.sh
 # /help - 显示帮助
 # /clear - 清屏
 ```
+
+## 🛠️ Makefile 构建系统
+
+项目提供了便捷的 Makefile 来简化开发和测试流程。所有命令都会自动激活虚拟环境。
+
+### 基本命令
+
+```bash
+# 显示所有可用命令
+make help
+
+# 完整构建流程（建立索引）
+make build
+
+# 运行所有测试
+make test
+
+# 清理临时文件
+make clean
+
+# 安装依赖
+make deps
+
+# 检查 Ollama 服务状态
+make ollama
+```
+
+### 测试命令
+
+```bash
+# 运行 RAG 决策测试
+make test-rag
+
+# 运行 LLM 判断测试
+make test-llm
+
+# 运行改进后的 RAG 测试
+make test-improved
+
+# 快速测试（基本测试 + 语法检查 + 导入测试）
+make quick-test
+```
+
+### 代码质量检查
+
+```bash
+# 语法检查
+make syntax
+
+# 导入测试
+make imports
+```
+
+### 开发和调试
+
+```bash
+# 交互式测试（聊天模式）
+make interactive
+
+# 调试特定查询
+make debug QUERY="如何实现用户认证功能？"
+
+# 开发模式（清理 + 测试）
+make dev
+
+# 完整设置（依赖 + Ollama + 语法 + 导入）
+make setup
+```
+
+### 命令说明
+
+| 命令 | 功能 | 说明 |
+|------|------|------|
+| `make build` | 建立代码库索引 | 运行 `codebase_agent_rag.py index` |
+| `make test` | 运行完整测试套件 | 包括 RAG 决策和 LLM 判断测试 |
+| `make test-rag` | RAG 决策测试 | 测试 RAG 功能是否正常工作 |
+| `make test-llm` | LLM 判断测试 | 测试 LLM 判断功能 |
+| `make syntax` | 语法检查 | 检查 Python 文件语法正确性 |
+| `make imports` | 导入测试 | 验证所有模块可以正常导入 |
+| `make clean` | 清理文件 | 删除缓存和临时文件 |
+| `make deps` | 安装依赖 | 安装 requirements_rag.txt 中的依赖 |
+| `make ollama` | 检查服务 | 验证 Ollama 服务是否运行 |
+| `make interactive` | 交互模式 | 启动聊天模式进行代码分析 |
+| `make debug` | 调试查询 | 需要提供 QUERY 参数 |
+
+### 使用示例
+
+```bash
+# 首次设置项目
+make setup
+
+# 日常开发流程
+make clean
+make test
+make syntax
+
+# 调试特定问题
+make debug QUERY="数据库连接失败的原因是什么？"
+
+# 快速验证
+make quick-test
+```
+
+### 注意事项
+
+- 所有命令都会自动激活 `venv_rag` 虚拟环境
+- 测试命令使用预设的示例查询，无需手动输入
+- `make debug` 需要提供 `QUERY` 参数才能运行
+- `make setup` 会执行完整的项目初始化流程
 
 ## 工作原理
 
