@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Codebase Agent with RAG - 使用 Ollama 和向量数据库的代码解释和修改工具
+Codebase Agent with RAG - Code explanation and modification tool using Ollama and vector database
 """
 
 import os
@@ -26,14 +26,14 @@ import ast
 console = Console()
 
 class OllamaClient:
-    """Ollama API 客户端"""
+    """Ollama API client"""
     
     def __init__(self, base_url: str = "http://localhost:11434", model: str = "devstral:24b"):
         self.base_url = base_url
         self.model = model
         
     def generate(self, prompt: str, temperature: float = 0.3, max_tokens: int = 4000) -> str:
-        """调用 Ollama 生成响应"""
+        """Call Ollama to generate response"""
         try:
             response = requests.post(
                 f"{self.base_url}/api/generate",
@@ -50,12 +50,12 @@ class OllamaClient:
             response.raise_for_status()
             return response.json()["response"]
         except requests.exceptions.ConnectionError:
-            raise Exception("无法连接到 Ollama 服务。请确保 Ollama 正在运行。")
+            raise Exception("Unable to connect to Ollama service. Please ensure Ollama is running.")
         except Exception as e:
-            raise Exception(f"Ollama API 调用失败: {str(e)}")
+            raise Exception(f"Ollama API call failed: {str(e)}")
     
     def embeddings(self, text: str) -> List[float]:
-        """获取文本的嵌入向量"""
+        """Get text embedding vectors"""
         try:
             response = requests.post(
                 f"{self.base_url}/api/embeddings",
@@ -67,11 +67,11 @@ class OllamaClient:
             response.raise_for_status()
             return response.json()["embedding"]
         except:
-            # 如果 Ollama 不支持嵌入，返回 None
+            # If Ollama doesn't support embedding, return None
             return None
     
     def list_models(self) -> List[str]:
-        """列出可用的模型"""
+        """List available models"""
         try:
             response = requests.get(f"{self.base_url}/api/tags")
             response.raise_for_status()
@@ -81,7 +81,7 @@ class OllamaClient:
             return []
 
 class CodeChunk:
-    """代码片段类"""
+    """Code chunk class"""
     
     def __init__(self, content: str, file_path: str, start_line: int, end_line: int, 
                  chunk_type: str = "code", metadata: Dict = None):
@@ -103,28 +103,28 @@ class CodeChunk:
         }
 
 class CodeParser:
-    """代码解析器，将代码文件分解为有意义的片段"""
+    """Code parser that breaks code files into meaningful chunks"""
     
     @staticmethod
     def parse_python(content: str, file_path: str) -> List[CodeChunk]:
-        """解析 Python 代码"""
+        """Parse Python code"""
         chunks = []
         
         try:
             tree = ast.parse(content)
             
-            # 提取函数
+            # Extract functions
             for node in ast.walk(tree):
                 if isinstance(node, ast.FunctionDef):
                     start_line = node.lineno
                     end_line = node.end_lineno or start_line
                     
-                    # 获取函数代码
+                    # Get function code
                     lines = content.splitlines()
                     func_lines = lines[start_line-1:end_line]
                     func_content = '\n'.join(func_lines)
                     
-                    # 提取文档字符串
+                    # Extract docstring
                     docstring = ast.get_docstring(node) or ""
                     
                     chunk = CodeChunk(
@@ -145,12 +145,12 @@ class CodeParser:
                     start_line = node.lineno
                     end_line = node.end_lineno or start_line
                     
-                    # 获取类代码
+                    # Get class code
                     lines = content.splitlines()
                     class_lines = lines[start_line-1:end_line]
                     class_content = '\n'.join(class_lines)
                     
-                    # 提取文档字符串
+                    # Extract docstring
                     docstring = ast.get_docstring(node) or ""
                     
                     chunk = CodeChunk(
@@ -167,13 +167,13 @@ class CodeParser:
                     )
                     chunks.append(chunk)
         except:
-            # 如果解析失败，返回整个文件作为一个块
+            # If parsing fails, return the entire file as one block
             pass
         
-        # 如果没有找到函数或类，或者解析失败，将整个文件分成较小的块
+        # If no functions or classes found, or parsing failed, split the entire file into smaller blocks
         if not chunks:
             lines = content.splitlines()
-            chunk_size = 50  # 每个块的行数
+            chunk_size = 50  # Number of lines per block
             
             for i in range(0, len(lines), chunk_size):
                 chunk_lines = lines[i:i+chunk_size]
@@ -190,22 +190,22 @@ class CodeParser:
     
     @staticmethod
     def parse_javascript(content: str, file_path: str) -> List[CodeChunk]:
-        """解析 JavaScript/TypeScript 代码（简化版）"""
+        """Parse JavaScript/TypeScript code (simplified version)"""
         chunks = []
         lines = content.splitlines()
         
-        # 简单的函数和类检测
+        # Simple function and class detection
         i = 0
         while i < len(lines):
             line = lines[i].strip()
             
-            # 检测函数
+            # Detect functions
             if ('function ' in line or 'const ' in line or 'let ' in line or 'var ' in line) and ('=' in line or '(' in line):
                 start = i
                 brace_count = 0
                 found_brace = False
                 
-                # 找到函数结束
+                # Find function end
                 for j in range(i, len(lines)):
                     if '{' in lines[j]:
                         brace_count += lines[j].count('{')
@@ -229,7 +229,7 @@ class CodeParser:
             else:
                 i += 1
         
-        # 如果没有找到函数，分块处理
+        # If no functions found, process in chunks
         if not chunks:
             chunk_size = 50
             for i in range(0, len(lines), chunk_size):
@@ -246,10 +246,10 @@ class CodeParser:
     
     @staticmethod
     def parse_generic(content: str, file_path: str) -> List[CodeChunk]:
-        """通用代码解析（按行数分块）"""
+        """Generic code parsing (chunked by line count)"""
         chunks = []
         lines = content.splitlines()
-        chunk_size = 50  # 每个块的行数
+        chunk_size = 50  # Number of lines per block
         
         for i in range(0, len(lines), chunk_size):
             chunk_lines = lines[i:i+chunk_size]
@@ -266,7 +266,7 @@ class CodeParser:
     
     @staticmethod
     def parse_file(content: str, file_path: str) -> List[CodeChunk]:
-        """根据文件类型解析代码"""
+        """Parse code based on file type"""
         ext = Path(file_path).suffix.lower()
         
         if ext == '.py':
@@ -277,83 +277,83 @@ class CodeParser:
             return CodeParser.parse_generic(content, file_path)
 
 class CodebaseRAG:
-    """基于 RAG 的代码库管理系统"""
+    """RAG-based codebase management system"""
     
     def __init__(self, persist_dir: str = ".codebase_index", ollama_client: OllamaClient = None):
         self.persist_dir = Path(persist_dir)
         self.persist_dir.mkdir(exist_ok=True)
         
-        # 初始化嵌入模型
+        # Initialize embedding model
         if ollama_client:
-            # 使用 Ollama 进行嵌入
-            console.print("[cyan]使用 Ollama 进行嵌入...[/cyan]")
+            # Use Ollama for embedding
+            console.print("[cyan]Using Ollama for embedding...[/cyan]")
             self.embedder = ollama_client
             self.use_ollama = True
         else:
-            # 回退到 SentenceTransformer
-            console.print("[cyan]正在加载嵌入模型...[/cyan]")
+            # Fall back to SentenceTransformer
+            console.print("[cyan]Loading embedding model...[/cyan]")
             self.embedder = SentenceTransformer('all-MiniLM-L6-v2')
             self.use_ollama = False
         
-        # 初始化向量数据库
+        # Initialize vector database
         self.chroma_client = chromadb.PersistentClient(
             path=str(self.persist_dir / "chroma"),
             settings=Settings(anonymized_telemetry=False)
         )
         
-        # 创建或加载集合
+        # Create or load collection
         try:
             self.collection = self.chroma_client.get_collection("codebase")
-            console.print("[green]加载已有索引[/green]")
+            console.print("[green]Loading existing index[/green]")
         except:
             self.collection = self.chroma_client.create_collection(
                 name="codebase",
                 metadata={"hnsw:space": "cosine"}
             )
-            console.print("[yellow]创建新索引[/yellow]")
+            console.print("[yellow]Creating new index[/yellow]")
         
-        # 文件哈希缓存（用于检测文件变化）
+        # File hash cache (for detecting file changes)
         self.hash_cache_file = self.persist_dir / "file_hashes.json"
         self.file_hashes = self._load_file_hashes()
     
     def _load_file_hashes(self) -> Dict[str, str]:
-        """加载文件哈希缓存"""
+        """Load file hash cache"""
         if self.hash_cache_file.exists():
             with open(self.hash_cache_file, 'r') as f:
                 return json.load(f)
         return {}
     
     def _save_file_hashes(self):
-        """保存文件哈希缓存"""
+        """Save file hash cache"""
         with open(self.hash_cache_file, 'w') as f:
             json.dump(self.file_hashes, f)
     
     def _get_file_hash(self, file_path: str) -> str:
-        """计算文件哈希"""
+        """Calculate file hash"""
         with open(file_path, 'rb') as f:
             return hashlib.md5(f.read()).hexdigest()
     
     def _embed_text(self, text: str) -> List[float]:
-        """生成文本嵌入"""
+        """Generate text embedding"""
         if self.use_ollama:
-            # 使用 Ollama 进行嵌入
+            # Use Ollama for embedding
             embedding = self.embedder.embeddings(text)
             if embedding is None:
-                raise Exception("Ollama 模型不支持嵌入功能")
+                raise Exception("Ollama model does not support embedding functionality")
             return embedding
         else:
-            # 使用 SentenceTransformer 进行嵌入
+            # Use SentenceTransformer for embedding
             return self.embedder.encode(text).tolist()
     
     def index_file(self, file_path: str, content: str):
-        """索引单个文件"""
-        # 检查文件是否已更改
+        """Index a single file"""
+        # Check if file has changed
         current_hash = self._get_file_hash(file_path)
         
         if file_path in self.file_hashes and self.file_hashes[file_path] == current_hash:
-            return  # 文件未更改，跳过
+            return  # File unchanged, skip
         
-        # 删除旧的索引
+        # Delete old index
         try:
             results = self.collection.get(where={"file_path": file_path})
             if results['ids']:
@@ -361,14 +361,14 @@ class CodebaseRAG:
         except:
             pass
         
-        # 解析代码为块
+        # Parse code into chunks
         chunks = CodeParser.parse_file(content, file_path)
         
-        # 索引每个块
+        # Index each chunk
         for i, chunk in enumerate(chunks):
             chunk_id = f"{file_path}:{chunk.start_line}:{chunk.end_line}"
             
-            # 准备索引内容
+            # Prepare index content
             index_content = f"File: {file_path}\n"
             if chunk.metadata.get('name'):
                 index_content += f"Name: {chunk.metadata['name']}\n"
@@ -376,10 +376,10 @@ class CodebaseRAG:
                 index_content += f"Description: {chunk.metadata['docstring']}\n"
             index_content += f"\n{chunk.content}"
             
-            # 生成嵌入
+            # Generate embedding
             embedding = self._embed_text(index_content)
             
-            # 存储到向量数据库
+            # Store to vector database
             self.collection.add(
                 embeddings=[embedding],
                 documents=[chunk.content],
@@ -393,21 +393,21 @@ class CodebaseRAG:
                 ids=[chunk_id]
             )
         
-        # 更新文件哈希
+        # Update file hash
         self.file_hashes[file_path] = current_hash
     
     def search(self, query: str, n_results: int = 10) -> List[Dict]:
-        """搜索相关代码片段"""
-        # 生成查询嵌入
+        """Search for related code snippets"""
+        # Generate query embedding
         query_embedding = self._embed_text(query)
         
-        # 搜索
+        # Search
         results = self.collection.query(
             query_embeddings=[query_embedding],
             n_results=n_results
         )
         
-        # 格式化结果
+        # Format results
         formatted_results = []
         for i in range(len(results['ids'][0])):
             formatted_results.append({
@@ -420,10 +420,10 @@ class CodebaseRAG:
         return formatted_results
     
     def get_stats(self) -> Dict:
-        """获取索引统计信息"""
+        """Get index statistics"""
         count = self.collection.count()
         
-        # 获取所有文档的元数据来统计
+        # Get metadata of all documents for statistics
         all_results = self.collection.get(limit=count)
         
         file_set = set()
@@ -442,7 +442,7 @@ class CodebaseRAG:
         }
     
     def clear_index(self):
-        """清除所有索引"""
+        """Clear all indices"""
         self.chroma_client.delete_collection("codebase")
         self.collection = self.chroma_client.create_collection(
             name="codebase",
@@ -452,7 +452,7 @@ class CodebaseRAG:
         self._save_file_hashes()
 
 class CodebaseAgentRAG:
-    """支持 RAG 的代码库智能助手"""
+    """RAG-enabled intelligent codebase assistant"""
     
     def __init__(self, model: str = "devstral:24b", 
                  base_url: str = "http://localhost:11434",
@@ -461,7 +461,7 @@ class CodebaseAgentRAG:
         self.model = model
         self.rag = CodebaseRAG(persist_dir=index_dir, ollama_client=self.client)
         
-        # 支持的文件扩展名
+        # Supported file extensions
         self.supported_extensions = {
             '.py', '.js', '.jsx', '.ts', '.tsx', '.java', '.cpp', '.c', 
             '.h', '.hpp', '.cs', '.go', '.rs', '.php', '.rb', '.swift',
@@ -471,42 +471,42 @@ class CodebaseAgentRAG:
             '.txt', '.sql', '.dockerfile', '.makefile'
         }
         
-        # 忽略的目录
+        # Ignored directories
         self.ignore_dirs = {
             '.git', '__pycache__', 'node_modules', '.venv', 'venv', 'venv_rag',
             'env', 'env_rag', 'virtualenv', 'conda', 'miniconda', 'anaconda',
             'dist', 'build', '.idea', '.vscode', 'target',
             'bin', 'obj', '.pytest_cache', '.mypy_cache', '.tox',
             'coverage', '.coverage', 'htmlcov', '.sass-cache',
-            '.codebase_index',  # 忽略索引目录
-            'site-packages', 'lib64', 'include', 'share',  # 虚拟环境常见目录
-            '.DS_Store', 'Thumbs.db'  # 系统文件
+            '.codebase_index',  # Ignore index directory
+            'site-packages', 'lib64', 'include', 'share',  # Common virtual environment directories
+            '.DS_Store', 'Thumbs.db'  # System files
         }
         
-        # 检查 Ollama 连接
+        # Check Ollama connection
         self._check_ollama_connection()
     
     def _check_ollama_connection(self):
-        """检查 Ollama 服务是否可用"""
+        """Check if Ollama service is available"""
         try:
             models = self.client.list_models()
             if not models:
-                console.print("[yellow]警告: Ollama 中没有安装任何模型[/yellow]")
-                console.print("[cyan]请运行: ollama pull devstral:24b[/cyan]")
+                console.print("[yellow]Warning: No models installed in Ollama[/yellow]")
+                console.print("[cyan]Please run: ollama pull devstral:24b[/cyan]")
             elif self.model not in models:
-                console.print(f"[yellow]警告: 模型 {self.model} 未安装[/yellow]")
-                console.print(f"[cyan]可用模型: {', '.join(models)}[/cyan]")
-                console.print(f"[cyan]安装模型: ollama pull {self.model}[/cyan]")
+                console.print(f"[yellow]Warning: Model {self.model} not installed[/yellow]")
+                console.print(f"[cyan]Available models: {', '.join(models)}[/cyan]")
+                console.print(f"[cyan]Install model: ollama pull {self.model}[/cyan]")
         except Exception as e:
-            console.print(f"[red]错误: {str(e)}[/red]")
-            console.print("[cyan]请确保 Ollama 正在运行: ollama serve[/cyan]")
+            console.print(f"[red]Error: {str(e)}[/red]")
+            console.print("[cyan]Please ensure Ollama is running: ollama serve[/cyan]")
             exit(1)
     
     def scan_directory(self, path: Path, show_progress: bool = True) -> List[Dict]:
-        """扫描目录获取所有代码文件"""
+        """Scan directory to get all code files"""
         files = []
         
-        # 收集所有需要处理的文件
+        # Collect all files that need processing
         all_files = []
         for file_path in path.rglob("*"):
             if (file_path.is_file() and 
@@ -520,7 +520,7 @@ class CodebaseAgentRAG:
                 TextColumn("[progress.description]{task.description}"),
                 console=console
             ) as progress:
-                task = progress.add_task("[cyan]扫描代码文件...", total=len(all_files))
+                task = progress.add_task("[cyan]Scanning code files...", total=len(all_files))
                 
                 for file_path in all_files:
                     try:
@@ -537,7 +537,7 @@ class CodebaseAgentRAG:
                         
                         progress.update(task, advance=1)
                     except Exception as e:
-                        console.print(f"[yellow]警告: 无法读取文件 {file_path}: {e}[/yellow]")
+                        console.print(f"[yellow]Warning: Unable to read file {file_path}: {e}[/yellow]")
         else:
             for file_path in all_files:
                 try:
@@ -557,293 +557,293 @@ class CodebaseAgentRAG:
         return files
     
     def index_codebase(self, path: Path):
-        """索引整个代码库"""
-        console.print(f"\n[bold cyan]正在索引代码库...[/bold cyan]")
+        """Index the entire codebase"""
+        console.print(f"\n[bold cyan]Indexing codebase...[/bold cyan]")
         
         files = self.scan_directory(path)
         
         if not files:
-            console.print("[red]未找到任何代码文件[/red]")
+            console.print("[red]No code files found[/red]")
             return
         
-        console.print(f"[green]找到 {len(files)} 个代码文件[/green]")
+        console.print(f"[green]Found {len(files)} code files[/green]")
         
-        # 索引文件
+        # Index files
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
             console=console
         ) as progress:
-            task = progress.add_task("[cyan]建立索引...", total=len(files))
+            task = progress.add_task("[cyan]Building index...", total=len(files))
             
             for file in files:
                 try:
                     self.rag.index_file(file['full_path'], file['content'])
                     progress.update(task, advance=1)
                 except Exception as e:
-                    console.print(f"[yellow]索引失败 {file['path']}: {e}[/yellow]")
+                    console.print(f"[yellow]Index failed {file['path']}: {e}[/yellow]")
         
-        # 保存文件哈希
+        # Save file hashes
         self.rag._save_file_hashes()
         
-        # 显示统计
+        # Display statistics
         stats = self.rag.get_stats()
-        console.print(f"\n[green]索引完成！[/green]")
-        console.print(f"总文件数: {stats['total_files']}")
-        console.print(f"总代码块: {stats['total_chunks']}")
+        console.print(f"\n[green]Indexing complete![/green]")
+        console.print(f"Total files: {stats['total_files']}")
+        console.print(f"Total code blocks: {stats['total_chunks']}")
         
         if stats['chunk_types']:
-            console.print("\n代码块类型分布:")
+            console.print("\nCode block type distribution:")
             for chunk_type, count in stats['chunk_types'].items():
                 console.print(f"  {chunk_type}: {count}")
     
     def should_use_rag(self, query: str) -> bool:
-        """智能判断查询是否需要使用 RAG 搜索"""
+        """Intelligently determine if query needs RAG search"""
         query_lower = query.lower().strip()
         
-        # 如果查询很短（少于3个字符），通常不需要 RAG
+        # If query is very short (less than 3 characters), usually doesn't need RAG
         if len(query_lower) < 3:
             return False
         
-        # 快速检查：明显的问候语
-        greetings = ['你好', 'hi', 'hello', '再见', 'bye', '谢谢', 'thanks']
+        # Quick check: obvious greetings
+        greetings = ['hello', 'hi', 'hello', 'goodbye', 'bye', 'thanks', 'thanks']
         if any(greeting in query_lower for greeting in greetings):
             return False
         
-        # 快速检查：明显的代码相关问题
+        # Quick check: obvious code-related questions
         code_indicators = [
-            '这个函数', '这个类', '这个方法', '这个文件', '这个代码',
-            '代码中', '项目中', '文件里', '函数里', '类里',
-            '查找', '搜索', '找到', '定位', '位置', '行号',
-            '错误', 'bug', '问题', '异常', '修复'
+            'this function', 'this class', 'this method', 'this file', 'this code',
+            'in code', 'in project', 'in file', 'in function', 'in class',
+            'find', 'search', 'locate', 'position', 'line number',
+            'error', 'bug', 'issue', 'exception', 'fix'
         ]
         if any(indicator in query_lower for indicator in code_indicators):
             return True
         
-        # 需要 LLM 判断的模糊情况
+        # Ambiguous cases that need LLM judgment
         ambiguous_indicators = [
-            '如何实现', '如何运行', '如何调试', '如何修复', '如何优化',
-            '这个功能', '这个程序', '这个项目', '这个系统'
+            'how to implement', 'how to run', 'how to debug', 'how to fix', 'how to optimize',
+            'this feature', 'this program', 'this project', 'this system'
         ]
         if any(indicator in query_lower for indicator in ambiguous_indicators):
-            # 这些情况需要 LLM 判断
+            # These cases need LLM judgment
             pass
         
-        # 快速检查：文件扩展名
+        # Quick check: file extensions
         if any(ext in query_lower for ext in ['.py', '.js', '.java', '.cpp', '.c', '.h', '.ts', '.vue', '.go', '.rs']):
             return True
         
-        # 快速检查：编程语法
+        # Quick check: programming syntax
         if any(char in query_lower for char in ['(', ')', '{', '}', '[', ']', ';', ':', '=', '==', '!=']):
             return True
         
-        # 使用 LLM 进行智能判断
+        # Use LLM for intelligent judgment
         return self._llm_judge_rag_need(query)
     
     def _llm_judge_rag_need(self, query: str) -> bool:
-        """使用 LLM 判断是否需要 RAG"""
-        prompt = f"""你是一个智能助手，需要判断用户的问题是否需要搜索当前代码库来回答。
+        """Use LLM to judge whether RAG is needed"""
+        prompt = f"""You are an intelligent assistant that needs to determine whether a user's question requires searching the current codebase to answer.
 
-用户问题: {query}
+User question: {query}
 
-请仔细分析这个问题是否需要搜索当前代码库中的具体代码、函数、类、文件或项目相关内容来回答。
+Please carefully analyze whether this question needs to search for specific code, functions, classes, files, or project-related content in the current codebase to answer.
 
-判断标准：
-1. 回答 "RAG" 如果问题询问：
-   - 当前代码库中的具体函数、类、方法、文件
-   - 当前项目的结构、配置、依赖
-   - 当前代码中的错误、bug、问题
-   - 当前项目的运行方式、部署方式
-   - 当前代码库中的具体实现细节
-   - 当前项目的功能、特性
+Judgment criteria:
+1. Answer "RAG" if the question asks about:
+   - Specific functions, classes, methods, files in the current codebase
+   - Current project structure, configuration, dependencies
+   - Errors, bugs, issues in the current code
+   - How the current project runs or is deployed
+   - Specific implementation details in the current codebase
+   - Features and characteristics of the current project
 
-2. 回答 "DIRECT" 如果问题询问：
-   - 通用编程概念、理论、原理
-   - 通用编程技能、学习方法
-   - 通用技术知识、概念解释
-   - 与当前代码库无关的一般性问题
+2. Answer "DIRECT" if the question asks about:
+   - General programming concepts, theories, principles
+   - General programming skills, learning methods
+   - General technical knowledge, concept explanations
+   - General questions unrelated to the current codebase
 
-特别注意：
-- "如何实现这个功能？" 如果指当前项目的功能，回答 "RAG"
-- "如何运行这个程序？" 如果指当前项目，回答 "RAG"
-- "如何调试代码？" 如果是通用技能，回答 "DIRECT"
+Special attention:
+- "How to implement this feature?" If referring to current project features, answer "RAG"
+- "How to run this program?" If referring to current project, answer "RAG"
+- "How to debug code?" If it's a general skill, answer "DIRECT"
 
-只回答 "RAG" 或 "DIRECT"，不要其他内容。"""
+Only answer "RAG" or "DIRECT", no other content."""
 
         try:
             response = self.client.generate(prompt, temperature=0.1, max_tokens=10)
             response = response.strip().upper()
             
-            # 解析响应
+            # Parse response
             if 'RAG' in response:
-                console.print(f"[dim]🤖 LLM 判断: RAG (需要搜索代码库) - 响应: '{response}'[/dim]")
+                console.print(f"[dim]🤖 LLM judgment: RAG (need to search codebase) - response: '{response}'[/dim]")
                 return True
             elif 'DIRECT' in response:
-                console.print(f"[dim]🤖 LLM 判断: DIRECT (直接回答) - 响应: '{response}'[/dim]")
+                console.print(f"[dim]🤖 LLM judgment: DIRECT (direct answer) - response: '{response}'[/dim]")
                 return False
             else:
-                # 如果 LLM 回答不明确，使用保守策略
-                console.print(f"[dim]🤖 LLM 回答不明确: '{response}'，使用保守策略[/dim]")
+                # If LLM answer is unclear, use conservative strategy
+                console.print(f"[dim]🤖 LLM answer unclear: '{response}', using conservative strategy[/dim]")
                 return False
                 
         except Exception as e:
-            # 如果 LLM 调用失败，使用保守策略
-            console.print(f"[yellow]LLM 判断失败，使用保守策略: {str(e)}[/yellow]")
+            # If LLM call fails, use conservative strategy
+            console.print(f"[yellow]LLM judgment failed, using conservative strategy: {str(e)}[/yellow]")
             return False
     
     def chat_direct(self, query: str) -> str:
-        """直接回答，不使用 RAG"""
-        prompt = f"""你是一个友好的AI助手。请用中文回答用户的问题。
+        """Direct answer without using RAG"""
+        prompt = f"""You are a friendly AI assistant. Please answer the user's question in English.
 
-用户问题: {query}
+User question: {query}
 
-请提供有用、准确的回答。如果问题涉及编程或技术，请提供一般性的指导和建议。"""
+Please provide helpful and accurate answers. If the question involves programming or technology, please provide general guidance and advice."""
         
         try:
             response = self.client.generate(prompt, temperature=0.7, max_tokens=1500)
             return response
         except Exception as e:
-            return f"[red]错误: {str(e)}[/red]"
+            return f"[red]Error: {str(e)}[/red]"
     
     def explain_code_rag(self, query: str, n_results: int = 10) -> str:
-        """使用 RAG 解释代码"""
-        console.print(f"\n[bold cyan]正在搜索相关代码...[/bold cyan]")
+        """Use RAG to explain code"""
+        console.print(f"\n[bold cyan]Searching for relevant code...[/bold cyan]")
         
-        # 搜索相关代码片段
+        # Search for relevant code snippets
         results = self.rag.search(query, n_results=n_results)
         
         if not results:
-            return "[red]未找到相关代码[/red]"
+            return "[red]No relevant code found[/red]"
         
-        # 构建上下文
+        # Build context
         context_parts = []
         included_files = set()
         
-        console.print(f"\n[cyan]找到 {len(results)} 个相关代码片段:[/cyan]")
+        console.print(f"\n[cyan]Found {len(results)} relevant code snippets:[/cyan]")
         
-        for i, result in enumerate(results[:5]):  # 只显示前5个
+        for i, result in enumerate(results[:5]):  # Only show first 5
             metadata = result['metadata']
             file_path = metadata['file_path']
             included_files.add(file_path)
             
-            # 显示搜索结果
+            # Display search results
             console.print(f"  • {Path(file_path).name}:{metadata['start_line']}-{metadata['end_line']}", end="")
             if metadata.get('name'):
                 console.print(f" [{metadata['name']}]", end="")
-            console.print(f" (相关度: {1 - result['distance']:.2f})")
+            console.print(f" (Relevance: {1 - result['distance']:.2f})")
             
-            # 构建上下文
-            context_part = f"\n--- 文件: {file_path} (行 {metadata['start_line']}-{metadata['end_line']}) ---\n"
+            # Build context
+            context_part = f"\n--- File: {file_path} (Lines {metadata['start_line']}-{metadata['end_line']}) ---\n"
             if metadata.get('name'):
-                context_part += f"名称: {metadata['name']}\n"
+                context_part += f"Name: {metadata['name']}\n"
             if metadata.get('docstring'):
-                context_part += f"说明: {metadata['docstring']}\n"
+                context_part += f"Description: {metadata['docstring']}\n"
             context_part += f"\n{result['content']}\n"
             
             context_parts.append(context_part)
         
         context = '\n'.join(context_parts)
         
-        # 构建 prompt
-        prompt = f"""你是一个代码分析专家。请基于以下相关代码片段回答用户的问题。
+        # Build prompt
+        prompt = f"""You are a code analysis expert. Please answer the user's question based on the following relevant code snippets.
 
-用户问题: {query}
+User question: {query}
 
-相关代码片段:
+Relevant code snippets:
 {context}
 
-请提供详细、准确的解释。如果涉及具体的代码实现，请引用相关的函数或类名。用中文回答。"""
+Please provide detailed and accurate explanations. If it involves specific code implementation, please reference the relevant function or class names. Answer in English."""
         
-        # 调用 Ollama
-        console.print(f"\n[bold cyan]正在生成解释...[/bold cyan]")
+        # Call Ollama
+        console.print(f"\n[bold cyan]Generating explanation...[/bold cyan]")
         
         try:
             response = self.client.generate(prompt, temperature=0.3, max_tokens=2000)
             return response
         except Exception as e:
-            return f"[red]错误: {str(e)}[/red]"
+            return f"[red]Error: {str(e)}[/red]"
     
     def modify_code(self, file_path: Path, instruction: str) -> Tuple[str, str]:
-        """修改代码文件（使用 RAG 增强上下文）"""
-        console.print(f"\n[bold cyan]正在读取文件: {file_path}[/bold cyan]")
+        """Modify code file (using RAG-enhanced context)"""
+        console.print(f"\n[bold cyan]Reading file: {file_path}[/bold cyan]")
         
         try:
             original_content = file_path.read_text(encoding='utf-8')
         except Exception as e:
-            return "", f"[red]错误: 无法读取文件 - {str(e)}[/red]"
+            return "", f"[red]Error: Unable to read file - {str(e)}[/red]"
         
-        # 搜索相关代码以获得更好的上下文
-        console.print("[cyan]搜索相关代码上下文...[/cyan]")
+        # Search for related code to get better context
+        console.print("[cyan]Searching for related code context...[/cyan]")
         context_query = f"{file_path.name} {instruction}"
         related_results = self.rag.search(context_query, n_results=5)
         
-        # 构建额外上下文
+        # Build additional context
         additional_context = ""
         if related_results:
-            additional_context = "\n相关代码参考:\n"
+            additional_context = "\nRelated code reference:\n"
             for result in related_results[:3]:
                 if result['metadata']['file_path'] != str(file_path):
                     additional_context += f"\n--- {result['metadata']['file_path']} ---\n"
                     additional_context += result['content'] + "\n"
         
-        # 获取文件扩展名对应的语言
+        # Get language corresponding to file extension
         lang = file_path.suffix[1:] if file_path.suffix else ''
         
-        # 构建 prompt
-        prompt = f"""你是一个专业的程序员。请根据用户的需求修改以下代码。
+        # Build prompt
+        prompt = f"""You are a professional programmer. Please modify the following code according to the user's requirements.
 
-原始代码文件 ({file_path.name}):
+Original code file ({file_path.name}):
 ```{lang}
 {original_content}
 ```
 
 {additional_context}
 
-修改需求: {instruction}
+Modification requirement: {instruction}
 
-请返回修改后的完整代码。只返回代码内容，不要包含markdown代码块标记，不要包含额外的解释。"""
+Please return the complete modified code. Only return the code content, do not include markdown code block markers, do not include additional explanations."""
         
-        console.print(f"\n[bold cyan]正在生成修改...[/bold cyan]")
+        console.print(f"\n[bold cyan]Generating modifications...[/bold cyan]")
         
         try:
             response = self.client.generate(prompt, temperature=0.2, max_tokens=4000)
             
-            # 清理返回的内容
+            # Clean up returned content
             lines = response.strip().split('\n')
             
-            # 去除开头的 ```
+            # Remove leading ```
             if lines and lines[0].strip().startswith('```'):
                 lines = lines[1:]
             
-            # 去除结尾的 ```
+            # Remove trailing ```
             if lines and lines[-1].strip() == '```':
                 lines = lines[:-1]
             
             modified_content = '\n'.join(lines)
             
-            # 更新索引
+            # Update index
             if modified_content != original_content:
                 self.rag.index_file(str(file_path), modified_content)
                 self.rag._save_file_hashes()
             
             return modified_content, ""
         except Exception as e:
-            return "", f"[red]错误: {str(e)}[/red]"
+            return "", f"[red]Error: {str(e)}[/red]"
     
     def list_indexed_files(self) -> None:
-        """列出已索引的文件"""
+        """List indexed files"""
         stats = self.rag.get_stats()
         
         if not stats['indexed_files']:
-            console.print("[yellow]没有已索引的文件[/yellow]")
+            console.print("[yellow]No indexed files[/yellow]")
             return
         
-        # 创建表格
-        table = Table(title="已索引文件")
-        table.add_column("文件路径", style="cyan")
-        table.add_column("代码块数", justify="right", style="green")
+        # Create table
+        table = Table(title="Indexed Files")
+        table.add_column("File Path", style="cyan")
+        table.add_column("Code Blocks", justify="right", style="green")
         
-        # 统计每个文件的块数
+        # Count blocks per file
         file_chunks = {}
         all_results = self.rag.collection.get(limit=stats['total_chunks'])
         
@@ -851,39 +851,39 @@ class CodebaseAgentRAG:
             file_path = metadata['file_path']
             file_chunks[file_path] = file_chunks.get(file_path, 0) + 1
         
-        # 排序并显示
+        # Sort and display
         for file_path in sorted(file_chunks.keys()):
             table.add_row(file_path, str(file_chunks[file_path]))
         
         console.print(table)
-        console.print(f"\n[bold]总计: {stats['total_files']} 个文件, {stats['total_chunks']} 个代码块[/bold]")
+        console.print(f"\n[bold]Total: {stats['total_files']} files, {stats['total_chunks']} code blocks[/bold]")
 
 
-# CLI 部分
+# CLI section
 @click.group()
-@click.option('--model', '-m', default='devstral:24b', help='Ollama 模型名称')
-@click.option('--base-url', default='http://localhost:11434', help='Ollama API 地址')
-@click.option('--index-dir', default='.codebase_index', help='索引存储目录')
+@click.option('--model', '-m', default='devstral:24b', help='Ollama model name')
+@click.option('--base-url', default='http://localhost:11434', help='Ollama API address')
+@click.option('--index-dir', default='.codebase_index', help='Index storage directory')
 @click.pass_context
 def cli(ctx, model, base_url, index_dir):
-    """Codebase Agent RAG - 基于 Ollama 和向量检索的智能代码库助手"""
+    """Codebase Agent RAG - Intelligent codebase assistant based on Ollama and vector retrieval"""
     ctx.obj = CodebaseAgentRAG(model=model, base_url=base_url, index_dir=index_dir)
 
 
 @cli.command()
-@click.option('--path', '-p', default='.', help='代码库路径')
-@click.option('--force', '-f', is_flag=True, help='强制重新索引所有文件')
+@click.option('--path', '-p', default='.', help='Codebase path')
+@click.option('--force', '-f', is_flag=True, help='Force re-index all files')
 @click.pass_obj
 def index(agent, path, force):
-    """建立或更新代码库索引"""
+    """Build or update codebase index"""
     path = Path(path).resolve()
     
     if not path.exists():
-        console.print(f"[red]错误: 路径不存在 - {path}[/red]")
+        console.print(f"[red]Error: Path does not exist - {path}[/red]")
         return
     
     if force:
-        console.print("[yellow]清除现有索引...[/yellow]")
+        console.print("[yellow]Clearing existing index...[/yellow]")
         agent.rag.clear_index()
     
     agent.index_codebase(path)
@@ -891,33 +891,33 @@ def index(agent, path, force):
 
 @cli.command()
 @click.argument('query')
-@click.option('--results', '-n', default=10, help='返回结果数量')
+@click.option('--results', '-n', default=10, help='Number of results to return')
 @click.pass_obj
 def search(agent, query, results):
-    """搜索代码库"""
-    console.print(f"\n[bold cyan]搜索: {query}[/bold cyan]")
+    """Search codebase"""
+    console.print(f"\n[bold cyan]Searching: {query}[/bold cyan]")
     
     search_results = agent.rag.search(query, n_results=results)
     
     if not search_results:
-        console.print("[yellow]未找到相关代码[/yellow]")
+        console.print("[yellow]No relevant code found[/yellow]")
         return
     
     for i, result in enumerate(search_results):
         metadata = result['metadata']
         
-        console.print(f"\n[bold green]结果 {i+1}:[/bold green]")
-        console.print(f"文件: {metadata['file_path']}")
-        console.print(f"位置: 行 {metadata['start_line']}-{metadata['end_line']}")
+        console.print(f"\n[bold green]Result {i+1}:[/bold green]")
+        console.print(f"File: {metadata['file_path']}")
+        console.print(f"Location: Lines {metadata['start_line']}-{metadata['end_line']}")
         
         if metadata.get('chunk_type'):
-            console.print(f"类型: {metadata['chunk_type']}")
+            console.print(f"Type: {metadata['chunk_type']}")
         if metadata.get('name'):
-            console.print(f"名称: {metadata['name']}")
+            console.print(f"Name: {metadata['name']}")
         
-        console.print(f"相关度: {1 - result['distance']:.2f}")
+        console.print(f"Relevance: {1 - result['distance']:.2f}")
         
-        # 显示代码片段
+        # Display code snippet
         syntax = Syntax(result['content'][:200] + "..." if len(result['content']) > 200 else result['content'],
                        Path(metadata['file_path']).suffix[1:] or "text",
                        theme="monokai", line_numbers=False)
@@ -926,35 +926,35 @@ def search(agent, query, results):
 
 @cli.command()
 @click.argument('query')
-@click.option('--results', '-n', default=10, help='使用的搜索结果数量')
+@click.option('--results', '-n', default=10, help='Number of search results to use')
 @click.pass_obj
 def explain(agent, query, results):
-    """使用 RAG 解释代码功能"""
-    # 检查是否有索引
+    """Use RAG to explain code functionality"""
+    # Check if there is an index
     stats = agent.rag.get_stats()
     if stats['total_chunks'] == 0:
-        console.print("[yellow]警告: 没有索引的代码。请先运行 'index' 命令。[/yellow]")
+        console.print("[yellow]Warning: No indexed code. Please run 'index' command first.[/yellow]")
         return
     
     result = agent.explain_code_rag(query, n_results=results)
     
     console.print("\n")
-    console.print(Panel(result, title="[bold green]代码解释[/bold green]", 
+    console.print(Panel(result, title="[bold green]Code Explanation[/bold green]", 
                        title_align="left", border_style="green"))
 
 
 @cli.command()
 @click.argument('file_path')
 @click.argument('instruction')
-@click.option('--output', '-o', help='输出文件路径（默认覆盖原文件）')
-@click.option('--dry-run', is_flag=True, help='只显示修改，不写入文件')
+@click.option('--output', '-o', help='Output file path (default overwrites original file)')
+@click.option('--dry-run', is_flag=True, help='Only display changes, do not write to file')
 @click.pass_obj
 def modify(agent, file_path, instruction, output, dry_run):
-    """修改代码文件（使用 RAG 增强）"""
+    """Modify code file (RAG-enhanced)"""
     file_path = Path(file_path).resolve()
     
     if not file_path.exists():
-        console.print(f"[red]错误: 文件不存在 - {file_path}[/red]")
+        console.print(f"[red]Error: File does not exist - {file_path}[/red]")
         return
     
     modified_content, error = agent.modify_code(file_path, instruction)
@@ -963,127 +963,127 @@ def modify(agent, file_path, instruction, output, dry_run):
         console.print(error)
         return
     
-    # 显示修改后的代码
+    # Display modified code
     console.print("\n")
     syntax = Syntax(modified_content, file_path.suffix[1:] if file_path.suffix else "text",
                    theme="monokai", line_numbers=True)
-    console.print(Panel(syntax, title=f"[bold green]修改后的代码 - {file_path.name}[/bold green]",
+    console.print(Panel(syntax, title=f"[bold green]Modified Code - {file_path.name}[/bold green]",
                        title_align="left", border_style="green"))
     
     if not dry_run:
         output_path = Path(output) if output else file_path
         
-        # 备份原文件
+        # Backup original file
         if output_path == file_path and file_path.exists():
             backup_path = file_path.with_suffix(file_path.suffix + '.bak')
             file_path.rename(backup_path)
-            console.print(f"\n[yellow]原文件已备份到: {backup_path}[/yellow]")
+            console.print(f"\n[yellow]Original file backed up to: {backup_path}[/yellow]")
         
-        # 写入新文件
+        # Write new file
         output_path.write_text(modified_content, encoding='utf-8')
-        console.print(f"[green]✓ 文件已保存到: {output_path}[/green]")
+        console.print(f"[green]✓ File saved to: {output_path}[/green]")
     else:
-        console.print("\n[yellow]试运行模式 - 文件未被修改[/yellow]")
+        console.print("\n[yellow]Dry run mode - File not modified[/yellow]")
 
 
 @cli.command()
 @click.pass_obj
 def stats(agent):
-    """显示索引统计信息"""
+    """Display index statistics"""
     stats = agent.rag.get_stats()
     
     console.print(Panel.fit(
-        f"[bold cyan]索引统计信息[/bold cyan]\n\n"
-        f"总文件数: {stats['total_files']}\n"
-        f"总代码块: {stats['total_chunks']}\n",
+        f"[bold cyan]Index Statistics[/bold cyan]\n\n"
+        f"Total files: {stats['total_files']}\n"
+        f"Total code blocks: {stats['total_chunks']}\n",
         border_style="cyan"
     ))
     
     if stats['chunk_types']:
-        console.print("\n[bold]代码块类型分布:[/bold]")
+        console.print("\n[bold]Code block type distribution:[/bold]")
         for chunk_type, count in sorted(stats['chunk_types'].items()):
             console.print(f"  {chunk_type}: {count}")
     
-    console.print("\n[bold]使用以下命令查看详细文件列表:[/bold]")
+    console.print("\n[bold]Use the following command to view detailed file list:[/bold]")
     console.print("  codebase-agent-rag list-files")
 
 
 @cli.command()
 @click.pass_obj
 def list_files(agent):
-    """列出已索引的文件"""
+    """List indexed files"""
     agent.list_indexed_files()
 
 
 @cli.command()
-@click.option('--yes', '-y', is_flag=True, help='跳过确认')
+@click.option('--yes', '-y', is_flag=True, help='Skip confirmation')
 @click.pass_obj
 def clear(agent, yes):
-    """清除所有索引"""
+    """Clear all indexes"""
     if not yes:
-        if not click.confirm("[yellow]确定要清除所有索引吗？[/yellow]"):
-            console.print("[cyan]已取消[/cyan]")
+        if not click.confirm("[yellow]Are you sure you want to clear all indexes?[/yellow]"):
+            console.print("[cyan]Cancelled[/cyan]")
             return
     
     agent.rag.clear_index()
-    console.print("[green]索引已清除[/green]")
+    console.print("[green]Index cleared[/green]")
 
 
 @cli.command()
 @click.argument('query')
 @click.pass_obj
 def test_rag_decision(agent, query):
-    """测试 RAG 决策功能"""
-    console.print(f"\n[bold cyan]查询: {query}[/bold cyan]")
-    console.print("[dim]正在分析...[/dim]")
+    """Test RAG decision functionality"""
+    console.print(f"\n[bold cyan]Query: {query}[/bold cyan]")
+    console.print("[dim]Analyzing...[/dim]")
     
     use_rag = agent.should_use_rag(query)
     
-    console.print(f"[bold]RAG 决策: {'🔍 使用 RAG' if use_rag else '💬 直接回答'}[/bold]")
+    console.print(f"[bold]RAG decision: {'🔍 Use RAG' if use_rag else '💬 Direct answer'}[/bold]")
     
     if use_rag:
-        console.print("[yellow]原因: 检测到代码相关问题[/yellow]")
+        console.print("[yellow]Reason: Code-related question detected[/yellow]")
     else:
-        console.print("[yellow]原因: 检测到一般性问题[/yellow]")
+        console.print("[yellow]Reason: General question detected[/yellow]")
 
 
 @cli.command()
 @click.argument('query')
 @click.pass_obj
 def debug_llm_judgment(agent, query):
-    """调试 LLM 判断功能"""
-    console.print(f"\n[bold cyan]调试 LLM 判断[/bold cyan]")
-    console.print(f"查询: {query}")
+    """Debug LLM judgment functionality"""
+    console.print(f"\n[bold cyan]Debug LLM judgment[/bold cyan]")
+    console.print(f"Query: {query}")
     console.print("=" * 50)
     
-    # 直接调用 LLM 判断
+    # Direct call to LLM judgment
     result = agent._llm_judge_rag_need(query)
     
-    console.print(f"\n[bold]最终结果: {'🔍 RAG' if result else '💬 DIRECT'}[/bold]")
+    console.print(f"\n[bold]Final result: {'🔍 RAG' if result else '💬 DIRECT'}[/bold]")
 
 
 @cli.command()
-@click.option('--results', '-n', default=10, help='使用的搜索结果数量')
+@click.option('--results', '-n', default=10, help='Number of search results to use')
 @click.pass_obj
 def chat(agent, results):
-    """交互式 RAG 分析模式"""
-    # 检查是否有索引
+    """Interactive RAG analysis mode"""
+    # Check if there is an index
     stats = agent.rag.get_stats()
     if stats['total_chunks'] == 0:
-        console.print("[yellow]警告: 没有索引的代码。请先运行 'index' 命令。[/yellow]")
-        if not click.confirm("继续使用交互模式？"):
+        console.print("[yellow]Warning: No indexed code. Please run 'index' command first.[/yellow]")
+        if not click.confirm("Continue with interactive mode?"):
             return
     
     console.print(Panel.fit(
-        f"[bold cyan]Codebase Agent RAG - 交互式分析模式[/bold cyan]\n"
-        f"[yellow]索引文件数: {stats['total_files']}[/yellow]\n"
-        f"[yellow]代码块数: {stats['total_chunks']}[/yellow]\n"
-        f"[green]使用模型: {agent.model}[/green]\n"
-        f"[dim]输入 'exit' 或 'quit' 退出[/dim]",
+        f"[bold cyan]Codebase Agent RAG - Interactive Analysis Mode[/bold cyan]\n"
+        f"[yellow]Indexed files: {stats['total_files']}[/yellow]\n"
+        f"[yellow]Code blocks: {stats['total_chunks']}[/yellow]\n"
+        f"[green]Using model: {agent.model}[/green]\n"
+        f"[dim]Enter 'exit' or 'quit' to exit[/dim]",
         border_style="cyan"
     ))
     
-    # 强制模式标志
+    # Force mode flags
     force_rag = False
     force_direct = False
     
@@ -1092,71 +1092,71 @@ def chat(agent, results):
             query = console.input("\n[bold green]?[/bold green] ")
             
             if query.lower() in ['exit', 'quit', 'q']:
-                console.print("[yellow]再见！[/yellow]")
+                console.print("[yellow]Goodbye![/yellow]")
                 break
             
             if not query.strip():
                 continue
             
-            # 特殊命令
+            # Special commands
             if query.startswith('/'):
                 command = query[1:].strip().lower()
                 
                 if command == 'stats':
                     stats = agent.rag.get_stats()
-                    console.print(f"文件数: {stats['total_files']}, 代码块: {stats['total_chunks']}")
+                    console.print(f"Files: {stats['total_files']}, Code blocks: {stats['total_chunks']}")
                 elif command == 'help':
-                    console.print("[cyan]可用命令:[/cyan]")
-                    console.print("  /stats - 显示索引统计")
-                    console.print("  /help - 显示帮助")
-                    console.print("  /clear - 清屏")
-                    console.print("  /rag - 强制使用 RAG 搜索")
-                    console.print("  /direct - 强制直接回答")
+                    console.print("[cyan]Available commands:[/cyan]")
+                    console.print("  /stats - Show index statistics")
+                    console.print("  /help - Show help")
+                    console.print("  /clear - Clear screen")
+                    console.print("  /rag - Force use RAG search")
+                    console.print("  /direct - Force direct answer")
                 elif command == 'clear':
                     console.clear()
                 elif command == 'rag':
-                    # 强制使用 RAG 搜索下一个查询
-                    console.print("[yellow]已设置强制使用 RAG 搜索模式[/yellow]")
+                    # Force use RAG search for next query
+                    console.print("[yellow]Set to force RAG search mode[/yellow]")
                     force_rag = True
                     continue
                 elif command == 'direct':
-                    # 强制直接回答下一个查询
-                    console.print("[yellow]已设置强制直接回答模式[/yellow]")
+                    # Force direct answer for next query
+                    console.print("[yellow]Set to force direct answer mode[/yellow]")
                     force_direct = True
                     continue
                 else:
-                    console.print(f"[red]未知命令: {command}[/red]")
+                    console.print(f"[red]Unknown command: {command}[/red]")
                 
                 continue
             
-            # 智能判断是否需要使用 RAG
+            # Intelligent judgment of whether RAG is needed
             if force_rag:
-                console.print("[cyan]🔍 强制使用 RAG 搜索...[/cyan]")
+                console.print("[cyan]🔍 Force using RAG search...[/cyan]")
                 result = agent.explain_code_rag(query, n_results=results)
-                force_rag = False  # 重置强制模式
+                force_rag = False  # Reset force mode
             elif force_direct:
-                console.print("[cyan]💬 强制直接回答...[/cyan]")
+                console.print("[cyan]💬 Force direct answer...[/cyan]")
                 result = agent.chat_direct(query)
-                force_direct = False  # 重置强制模式
+                force_direct = False  # Reset force mode
             else:
-                console.print("[dim]🤔 正在分析查询类型...[/dim]")
+                console.print("[dim]🤔 Analyzing query type...[/dim]")
                 use_rag = agent.should_use_rag(query)
                 if use_rag:
-                    console.print("[cyan]🔍 检测到代码相关问题，使用 RAG 搜索...[/cyan]")
+                    console.print("[cyan]🔍 Code-related question detected, using RAG search...[/cyan]")
                     result = agent.explain_code_rag(query, n_results=results)
                 else:
-                    console.print("[cyan]💬 检测到一般性问题，直接回答...[/cyan]")
+                    console.print("[cyan]💬 General question detected, direct answer...[/cyan]")
                     result = agent.chat_direct(query)
             
             console.print("\n")
-            console.print(Panel(result, title="[bold green]回答[/bold green]",
+            console.print(Panel(result, title="[bold green]Answer[/bold green]",
                               title_align="left", border_style="green"))
             
         except KeyboardInterrupt:
-            console.print("\n[yellow]已取消[/yellow]")
+            console.print("\n[yellow]Cancelled[/yellow]")
             break
         except Exception as e:
-            console.print(f"[red]错误: {str(e)}[/red]")
+            console.print(f"[red]Error: {str(e)}[/red]")
 
 
 if __name__ == '__main__':

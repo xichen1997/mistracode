@@ -1,142 +1,142 @@
-# Codebase Agent RAG 项目结构
+# Codebase Agent RAG Project Structure
 
-## 目录结构
+## Directory Structure
 
 ```
 mistralcode/
-├── codebase_agent_rag.py      # 主程序文件
-├── build.py                   # Python 构建系统
-├── Makefile                   # Makefile 快捷方式
-├── requirements.txt           # Python 依赖
-├── README_RAG_IMPROVEMENTS.md # RAG 改进说明
-├── PROJECT_STRUCTURE.md       # 项目结构说明
-└── tests/                     # 测试目录
-    ├── __init__.py           # 测试包初始化
-    ├── conftest.py           # pytest 配置
-    ├── run_tests.py          # 测试运行器
-    ├── test_rag_decision.py  # RAG 决策测试
-    ├── test_llm_judgment.py  # LLM 判断测试
-    └── test_improved_rag.py  # 改进后的 RAG 测试
+├── codebase_agent_rag.py      # Main program file
+├── build.py                   # Python build system
+├── Makefile                   # Makefile shortcuts
+├── requirements.txt           # Python dependencies
+├── README_RAG_IMPROVEMENTS.md # RAG improvements documentation
+├── PROJECT_STRUCTURE.md       # Project structure documentation
+└── tests/                     # Test directory
+    ├── __init__.py           # Test package initialization
+    ├── conftest.py           # pytest configuration
+    ├── run_tests.py          # Test runner
+    ├── test_rag_decision.py  # RAG decision tests
+    ├── test_llm_judgment.py  # LLM judgment tests
+    └── test_improved_rag.py  # Improved RAG tests
 ```
 
-## 构建系统
+## Build System
 
-### Python 构建系统 (build.py)
+### Python Build System (build.py)
 
-提供类似 Makefile 的功能，支持以下命令：
+Provides Makefile-like functionality, supporting the following commands:
 
-- `python build.py build` - 完整构建流程
-- `python build.py test [name]` - 运行测试
-- `python build.py syntax` - 语法检查
-- `python build.py imports` - 导入测试
-- `python build.py clean` - 清理临时文件
-- `python build.py deps` - 安装依赖
-- `python build.py ollama` - 检查 Ollama 服务
-- `python build.py interactive` - 交互式测试
-- `python build.py debug <query>` - 调试特定查询
+- `python build.py build` - Complete build process
+- `python build.py test [name]` - Run tests
+- `python build.py syntax` - Syntax check
+- `python build.py imports` - Import test
+- `python build.py clean` - Clean temporary files
+- `python build.py deps` - Install dependencies
+- `python build.py ollama` - Check Ollama service
+- `python build.py interactive` - Interactive test
+- `python build.py debug <query>` - Debug specific query
 
-### Makefile 快捷方式
+### Makefile Shortcuts
 
-提供传统的 Makefile 接口：
+Provides traditional Makefile interface:
 
-- `make build` - 完整构建流程
-- `make test` - 运行所有测试
-- `make test-rag` - 运行 RAG 决策测试
-- `make test-llm` - 运行 LLM 判断测试
-- `make test-improved` - 运行改进后的 RAG 测试
-- `make clean` - 清理临时文件
-- `make deps` - 安装依赖
-- `make ollama` - 检查 Ollama 服务
-- `make interactive` - 交互式测试
-- `make debug QUERY="查询"` - 调试特定查询
+- `make build` - Complete build process
+- `make test` - Run all tests
+- `make test-rag` - Run RAG decision tests
+- `make test-llm` - Run LLM judgment tests
+- `make test-improved` - Run improved RAG tests
+- `make clean` - Clean temporary files
+- `make deps` - Install dependencies
+- `make ollama` - Check Ollama service
+- `make interactive` - Interactive test
+- `make debug QUERY="query"` - Debug specific query
 
-## 测试系统
+## Test System
 
-### 测试文件
+### Test Files
 
-1. **test_rag_decision.py** - 基本 RAG 决策测试
-   - 测试关键词匹配功能
-   - 验证查询分类准确性
+1. **test_rag_decision.py** - Basic RAG decision tests
+   - Test keyword matching functionality
+   - Verify query classification accuracy
 
-2. **test_llm_judgment.py** - LLM 判断功能测试
-   - 测试 LLM 智能判断
-   - 包含交互式测试模式
+2. **test_llm_judgment.py** - LLM judgment functionality tests
+   - Test LLM intelligent judgment
+   - Includes interactive test mode
 
-3. **test_improved_rag.py** - 改进后的 RAG 功能测试
-   - 全面测试改进后的功能
-   - 包含边界情况测试
+3. **test_improved_rag.py** - Improved RAG functionality tests
+   - Comprehensive testing of improved features
+   - Includes edge case testing
 
-### 测试运行器
+### Test Runner
 
-- **tests/run_tests.py** - 独立的测试运行器
-- **tests/conftest.py** - pytest 配置文件
-- 支持单元测试和集成测试标记
+- **tests/run_tests.py** - Independent test runner
+- **tests/conftest.py** - pytest configuration file
+- Supports unit test and integration test markers
 
-## 使用方法
+## Usage
 
-### 快速开始
+### Quick Start
 
 ```bash
-# 完整构建和测试
+# Complete build and test
 make build
 
-# 或者使用 Python 构建系统
+# Or use Python build system
 python build.py build
 ```
 
-### 开发工作流
+### Development Workflow
 
 ```bash
-# 1. 清理环境
+# 1. Clean environment
 make clean
 
-# 2. 安装依赖
+# 2. Install dependencies
 make deps
 
-# 3. 检查服务
+# 3. Check service
 make ollama
 
-# 4. 运行测试
+# 4. Run tests
 make test
 
-# 5. 调试特定问题
-make debug QUERY="如何实现这个功能？"
+# 5. Debug specific issues
+make debug QUERY="How to implement this feature?"
 ```
 
-### 测试特定功能
+### Test Specific Features
 
 ```bash
-# 测试 RAG 决策
+# Test RAG decision
 make test-rag
 
-# 测试 LLM 判断
+# Test LLM judgment
 make test-llm
 
-# 测试改进后的功能
+# Test improved features
 make test-improved
 
-# 交互式测试
+# Interactive test
 make interactive
 ```
 
-## 优势
+## Advantages
 
-1. **统一接口** - 提供 Python 和 Makefile 两种接口
-2. **完整流程** - 从依赖安装到测试运行的完整流程
-3. **详细反馈** - 丰富的输出信息和错误报告
-4. **灵活配置** - 支持多种测试模式和配置
-5. **易于扩展** - 模块化设计，易于添加新功能
+1. **Unified Interface** - Provides both Python and Makefile interfaces
+2. **Complete Process** - Complete workflow from dependency installation to test execution
+3. **Detailed Feedback** - Rich output information and error reporting
+4. **Flexible Configuration** - Supports multiple test modes and configurations
+5. **Easy to Extend** - Modular design, easy to add new features
 
-## 扩展
+## Extension
 
-### 添加新测试
+### Adding New Tests
 
-1. 在 `tests/` 目录下创建新的测试文件
-2. 在 `build.py` 的 `test_files` 列表中添加新测试
-3. 在 `Makefile` 中添加对应的目标
+1. Create new test files in the `tests/` directory
+2. Add new tests to the `test_files` list in `build.py`
+3. Add corresponding targets in `Makefile`
 
-### 添加新命令
+### Adding New Commands
 
-1. 在 `BuildSystem` 类中添加新方法
-2. 在 `commands` 字典中添加命令映射
-3. 在 `Makefile` 中添加对应的目标 
+1. Add new methods to the `BuildSystem` class
+2. Add command mapping to the `commands` dictionary
+3. Add corresponding targets in `Makefile` 

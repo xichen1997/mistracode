@@ -1,44 +1,44 @@
 #!/usr/bin/env python3
 """
-测试 RAG 决策功能
+Test RAG decision functionality
 """
 
 from codebase_agent_rag import CodebaseAgentRAG
 
 def test_rag_decisions():
-    """测试各种查询的 RAG 决策"""
+    """Test RAG decisions for various queries"""
     agent = CodebaseAgentRAG()
     
-    # 测试用例
+    # Test cases
     test_queries = [
-        # 应该使用 RAG 的查询
-        ("这个函数是做什么的？", True),
-        ("代码中有哪些错误？", True),
-        ("如何实现这个功能？", True),
-        ("查找所有 Python 文件", True),
-        ("解释这个类的结构", True),
-        ("代码库中有哪些模块？", True),
-        ("这个变量在哪里定义的？", True),
-        ("如何修复这个 bug？", True),
-        ("这个文件的作用是什么？", True),
-        ("项目中使用了哪些依赖？", True),
+        # Queries that should use RAG
+        ("What does this function do?", True),
+        ("What errors are in the code?", True),
+        ("How to implement this feature?", True),
+        ("Find all Python files", True),
+        ("Explain the structure of this class", True),
+        ("What modules are in the codebase?", True),
+        ("Where is this variable defined?", True),
+        ("How to fix this bug?", True),
+        ("What is the purpose of this file?", True),
+        ("What dependencies are used in the project?", True),
         
-        # 应该直接回答的查询
-        ("你好", False),
-        ("今天天气怎么样？", False),
-        ("谢谢", False),
-        ("再见", False),
-        ("什么是人工智能？", False),
-        ("如何学习编程？", False),
-        ("Python 是什么？", False),
-        ("你好吗？", False),
-        ("什么是机器学习？", False),
-        ("如何提高编程技能？", False),
-        ("什么是面向对象编程？", False),
-        ("数据库是什么？", False),
+        # Queries that should be answered directly
+        ("Hello", False),
+        ("How's the weather today?", False),
+        ("Thank you", False),
+        ("Goodbye", False),
+        ("What is artificial intelligence?", False),
+        ("How to learn programming?", False),
+        ("What is Python?", False),
+        ("How are you?", False),
+        ("What is machine learning?", False),
+        ("How to improve programming skills?", False),
+        ("What is object-oriented programming?", False),
+        ("What is a database?", False),
     ]
     
-    print("测试 RAG 决策功能\n")
+    print("Testing RAG decision functionality\n")
     print("=" * 50)
     
     correct = 0
@@ -47,18 +47,18 @@ def test_rag_decisions():
     for query, expected in test_queries:
         result = agent.should_use_rag(query)
         status = "✅" if result == expected else "❌"
-        decision = "RAG" if result else "直接回答"
-        expected_decision = "RAG" if expected else "直接回答"
+        decision = "RAG" if result else "DIRECT"
+        expected_decision = "RAG" if expected else "DIRECT"
         
-        print(f"{status} 查询: {query}")
-        print(f"   决策: {decision} (期望: {expected_decision})")
+        print(f"{status} Query: {query}")
+        print(f"   Decision: {decision} (Expected: {expected_decision})")
         print()
         
         if result == expected:
             correct += 1
     
     print("=" * 50)
-    print(f"正确率: {correct}/{total} ({correct/total*100:.1f}%)")
+    print(f"Accuracy: {correct}/{total} ({correct/total*100:.1f}%)")
 
 if __name__ == "__main__":
     test_rag_decisions() 

@@ -1,136 +1,136 @@
-# Codebase Agent RAG 改进功能
+# Codebase Agent RAG Improvement Features
 
-## 智能 RAG 决策功能
+## Intelligent RAG Decision Functionality
 
-### 概述
-改进后的 chat 功能现在能够智能判断用户查询是否需要使用 RAG（检索增强生成）搜索，还是直接回答。
+### Overview
+The improved chat functionality can now intelligently determine whether user queries need to use RAG (Retrieval-Augmented Generation) search or direct answers.
 
-### 主要改进
+### Main Improvements
 
-#### 1. 智能查询分类
-- **代码相关问题**：自动使用 RAG 搜索相关代码片段
-- **一般性问题**：直接回答，无需搜索代码库
+#### 1. Intelligent Query Classification
+- **Code-related questions**: Automatically use RAG to search relevant code snippets
+- **General questions**: Direct answers without needing to search the codebase
 
-#### 2. 关键词识别
-**需要 RAG 的关键词：**
-- 代码相关：代码、函数、类、方法、文件、实现、定义、调用、引用
-- 问题相关：如何、怎么、什么、哪里、哪个、为什么、原因
-- 搜索相关：搜索、查找、找到、定位、位置、行号、文件路径
-- 分析相关：解释、说明、分析、理解、查看、检查、测试
-- 项目相关：代码库、项目、模块、包、依赖、配置、设置
+#### 2. Keyword Recognition
+**Keywords that require RAG:**
+- Code-related: code, function, class, method, file, implementation, definition, call, reference
+- Question-related: how, what, where, which, why, reason
+- Search-related: search, find, locate, position, line number, file path
+- Analysis-related: explain, describe, analyze, understand, view, check, test
+- Project-related: codebase, project, module, package, dependency, configuration, settings
 
-**不需要 RAG 的关键词：**
-- 问候：你好、再见、谢谢、帮助、hello、hi
-- 一般话题：天气、时间、日期、新闻、故事、笑话
-- 通用概念：一般、通用、概念、理论、原理、基础知识
+**Keywords that don't require RAG:**
+- Greetings: hello, goodbye, thank you, help, hi
+- General topics: weather, time, date, news, story, joke
+- General concepts: general, universal, concept, theory, principle, basic knowledge
 
-#### 3. 特殊模式
-- **强制 RAG 模式**：使用 `/rag` 命令强制使用 RAG 搜索
-- **强制直接回答模式**：使用 `/direct` 命令强制直接回答
+#### 3. Special Modes
+- **Forced RAG Mode**: Use `/rag` command to force RAG search
+- **Forced Direct Answer Mode**: Use `/direct` command to force direct answers
 
-### 使用方法
+### Usage
 
-#### 1. 基本使用
+#### 1. Basic Usage
 ```bash
-# 启动交互式聊天
+# Start interactive chat
 python codebase_agent_rag.py chat
 
-# 测试 RAG 决策
-python codebase_agent_rag.py test-rag-decision "这个函数是做什么的？"
+# Test RAG decision
+python codebase_agent_rag.py test-rag-decision "What does this function do?"
 ```
 
-#### 2. 交互式命令
-在 chat 模式下，可以使用以下特殊命令：
-- `/help` - 显示帮助信息
-- `/stats` - 显示索引统计
-- `/clear` - 清屏
-- `/rag` - 强制使用 RAG 搜索下一个查询
-- `/direct` - 强制直接回答下一个查询
+#### 2. Interactive Commands
+In chat mode, you can use the following special commands:
+- `/help` - Show help information
+- `/stats` - Show index statistics
+- `/clear` - Clear screen
+- `/rag` - Force RAG search for the next query
+- `/direct` - Force direct answer for the next query
 
-#### 3. 测试功能
+#### 3. Testing Features
 ```bash
-# 运行基本测试脚本
+# Run basic test script
 python test_rag_decision.py
 
-# 运行 LLM 判断测试
+# Run LLM judgment test
 python test_llm_judgment.py
 
-# 交互式测试
+# Interactive testing
 python test_llm_judgment.py interactive
 
-# 运行改进后的全面测试
+# Run comprehensive improved test
 python test_improved_rag.py
 
-# 调试特定查询的 LLM 判断
-python codebase_agent_rag.py debug-llm-judgment "如何实现这个功能？"
+# Debug LLM judgment for specific queries
+python codebase_agent_rag.py debug-llm-judgment "How to implement this feature?"
 ```
 
-### 示例
+### Examples
 
-#### 代码相关问题（使用 RAG）
+#### Code-related Questions (Using RAG)
 ```
-用户: 这个函数是做什么的？
-系统: 🔍 检测到代码相关问题，使用 RAG 搜索...
-```
-
-#### 一般性问题（直接回答）
-```
-用户: 你好
-系统: 💬 检测到一般性问题，直接回答...
+User: What does this function do?
+System: 🔍 Detected code-related question, using RAG search...
 ```
 
-#### 强制模式
+#### General Questions (Direct Answer)
 ```
-用户: /rag
-系统: 已设置强制使用 RAG 搜索模式
-用户: 今天天气怎么样？
-系统: 🔍 强制使用 RAG 搜索...
+User: Hello
+System: 💬 Detected general question, answering directly...
 ```
 
-#### LLM 智能判断
+#### Forced Modes
 ```
-用户: 什么是 Python？
-系统: 🤔 正在分析查询类型...
-系统: 🤖 LLM 判断: DIRECT (直接回答)
-系统: 💬 检测到一般性问题，直接回答...
-```
-
-```
-用户: 这个函数是做什么的？
-系统: 🤔 正在分析查询类型...
-系统: 🤖 LLM 判断: RAG (需要搜索代码库)
-系统: 🔍 检测到代码相关问题，使用 RAG 搜索...
+User: /rag
+System: Forced RAG search mode enabled
+User: How's the weather today?
+System: 🔍 Forcing RAG search...
 ```
 
-### 优势
+#### LLM Intelligent Judgment
+```
+User: What is Python?
+System: 🤔 Analyzing query type...
+System: 🤖 LLM judgment: DIRECT (direct answer)
+System: 💬 Detected general question, answering directly...
+```
 
-1. **提高效率**：避免对一般性问题进行不必要的代码搜索
-2. **更快的响应**：直接回答比 RAG 搜索更快
-3. **智能判断**：基于关键词和上下文智能分类查询
-4. **用户控制**：提供强制模式让用户控制行为
-5. **更好的用户体验**：清晰的反馈显示当前使用的模式
+```
+User: What does this function do?
+System: 🤔 Analyzing query type...
+System: 🤖 LLM judgment: RAG (needs codebase search)
+System: 🔍 Detected code-related question, using RAG search...
+```
 
-### 技术实现
+### Advantages
 
-#### 智能判断策略
-1. **快速检查**：
-   - 短查询（<3字符）直接返回 False
-   - 明显问候语（你好、hi、hello 等）直接返回 False
-   - 明显代码相关问题（包含"这个函数"、"代码中"、"错误"等）直接返回 True
-   - 文件扩展名检测（.py, .js, .java 等）
-   - 编程语法检测（括号、分号等）
+1. **Improved Efficiency**: Avoid unnecessary code searches for general questions
+2. **Faster Response**: Direct answers are faster than RAG searches
+3. **Intelligent Judgment**: Smart query classification based on keywords and context
+4. **User Control**: Provide forced modes for user control
+5. **Better User Experience**: Clear feedback showing current mode
 
-2. **LLM 智能判断**：
-   - 对于模糊的查询，使用 LLM 进行智能分析
-   - 提供详细的判断标准和示例给 LLM
-   - 特别处理边界情况（如"如何实现这个功能？"、"如何运行这个程序？"）
-   - 要求 LLM 只回答 "RAG" 或 "DIRECT"
-   - 失败时使用保守策略（默认不使用 RAG）
-   - 显示 LLM 的完整响应用于调试
+### Technical Implementation
 
-#### 优势
-- **高效**：快速检查避免不必要的 LLM 调用
-- **智能**：LLM 判断处理复杂和模糊的查询
-- **可靠**：失败时使用保守策略确保系统稳定
-- **透明**：显示判断过程和结果
-- **可配置**：支持强制模式覆盖自动判断 
+#### Intelligent Judgment Strategy
+1. **Quick Check**:
+   - Short queries (<3 characters) directly return False
+   - Obvious greetings (hello, hi, etc.) directly return False
+   - Obvious code-related questions (containing "this function", "in code", "error", etc.) directly return True
+   - File extension detection (.py, .js, .java, etc.)
+   - Programming syntax detection (parentheses, semicolons, etc.)
+
+2. **LLM Intelligent Judgment**:
+   - For ambiguous queries, use LLM for intelligent analysis
+   - Provide detailed judgment criteria and examples to LLM
+   - Special handling for edge cases (such as "How to implement this feature?", "How to run this program?")
+   - Require LLM to only answer "RAG" or "DIRECT"
+   - Use conservative strategy on failure (default to not using RAG)
+   - Display complete LLM response for debugging
+
+#### Advantages
+- **Efficient**: Quick checks avoid unnecessary LLM calls
+- **Intelligent**: LLM judgment handles complex and ambiguous queries
+- **Reliable**: Conservative strategy ensures system stability on failure
+- **Transparent**: Display judgment process and results
+- **Configurable**: Support forced modes to override automatic judgment 

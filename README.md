@@ -1,407 +1,407 @@
 # Codebase Agent RAG
 
-基于向量检索增强生成（RAG）的智能代码库助手，使用 Ollama 本地运行，提供更准确的代码理解和分析能力。
+An intelligent codebase assistant based on Retrieval-Augmented Generation (RAG), running locally with Ollama to provide more accurate code understanding and analysis capabilities.
 
-## 📋 目录
+## 📋 Table of Contents
 
-- [🚀 新功能特性](#-新功能特性)
-- [安装](#安装)
-- [快速开始](#快速开始)
-- [🛠️ Makefile 构建系统](#️-makefile-构建系统)
-- [工作原理](#工作原理)
-- [高级功能](#高级功能)
-- [性能优化](#性能优化)
-- [常见问题](#常见问题)
-- [与基础版本对比](#与基础版本对比)
-- [故障排除](#故障排除)
-- [DEBUG 工具](#debug-工具)
-- [开发路线图](#开发路线图)
-- [贡献](#贡献)
+- [🚀 New Features](#-new-features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [🛠️ Makefile Build System](#️-makefile-build-system)
+- [How It Works](#how-it-works)
+- [Advanced Features](#advanced-features)
+- [Performance Optimization](#performance-optimization)
+- [FAQ](#faq)
+- [Comparison with Base Version](#comparison-with-base-version)
+- [Troubleshooting](#troubleshooting)
+- [DEBUG Tools](#debug-tools)
+- [Development Roadmap](#development-roadmap)
+- [Contributing](#contributing)
 
-## 🚀 新功能特性
+## 🚀 New Features
 
-### RAG 增强功能
-- **向量化索引**: 将代码库转换为向量存储，支持语义搜索
-- **智能代码分块**: 自动识别函数、类等代码结构
-- **增量索引**: 只更新修改过的文件，提高效率
-- **上下文增强**: 修改代码时自动查找相关代码作为参考
-- **持久化存储**: 索引数据本地保存，无需重复构建
+### RAG Enhancement Features
+- **Vector Indexing**: Convert codebase to vector storage for semantic search
+- **Smart Code Chunking**: Automatically identify functions, classes and other code structures
+- **Incremental Indexing**: Only update modified files for improved efficiency
+- **Context Enhancement**: Automatically find related code as reference when modifying code
+- **Persistent Storage**: Index data saved locally, no need to rebuild
 
-### 核心功能
-- 🔍 **语义搜索**: 基于含义而非关键词搜索代码
-- 📊 **精准定位**: 快速找到相关函数、类和代码片段
-- 💡 **智能解释**: 结合相关代码上下文提供准确解释
-- ✏️ **上下文修改**: 修改代码时参考相关实现
-- 💬 **交互式分析**: 支持连续对话和深度分析
+### Core Features
+- 🔍 **Semantic Search**: Search code based on meaning rather than keywords
+- 📊 **Precise Location**: Quickly find relevant functions, classes and code snippets
+- 💡 **Smart Explanation**: Provide accurate explanations combined with relevant code context
+- ✏️ **Context Modification**: Reference related implementations when modifying code
+- 💬 **Interactive Analysis**: Support continuous dialogue and in-depth analysis
 
-## 安装
+## Installation
 
-### 1. 系统要求
+### 1. System Requirements
 - Python 3.8+
-- 4GB+ RAM（推荐 8GB）
-- 2GB 磁盘空间（用于模型和索引）
+- 4GB+ RAM (8GB recommended)
+- 2GB disk space (for models and indices)
 
-### 2. 安装 Ollama
+### 2. Install Ollama
 ```bash
 # macOS/Linux
 curl -fsSL https://ollama.ai/install.sh | sh
 ```
 
-### 3. 启动 Ollama 并下载模型
+### 3. Start Ollama and Download Models
 ```bash
-# 启动服务
+# Start service
 ollama serve
 
-# 下载推荐模型（新终端）
+# Download recommended model (new terminal)
 ollama pull deepseek-coder:6.7b
 ```
 
-### 4. 安装 Codebase Agent RAG
+### 4. Install Codebase Agent RAG
 ```bash
-# 运行安装脚本
+# Run installation script
 chmod +x setup_rag.sh
 ./setup_rag.sh
 ```
 
-## 快速开始
+## Quick Start
 
-### 1. 首次使用 - 建立索引
+### 1. First Use - Build Index
 ```bash
-# 索引当前目录
+# Index current directory
 ./codebase-agent-rag index
 
-# 索引指定目录
+# Index specific directory
 ./codebase-agent-rag index --path /path/to/project
 
-# 强制重建索引
+# Force rebuild index
 ./codebase-agent-rag index --force
 ```
 
-### 2. 搜索代码
+### 2. Search Code
 ```bash
-# 语义搜索
-./codebase-agent-rag search "数据库连接"
-./codebase-agent-rag search "用户认证逻辑"
-./codebase-agent-rag search "API 错误处理"
+# Semantic search
+./codebase-agent-rag search "database connection"
+./codebase-agent-rag search "user authentication logic"
+./codebase-agent-rag search "API error handling"
 
-# 指定结果数量
-./codebase-agent-rag search "缓存实现" -n 20
+# Specify number of results
+./codebase-agent-rag search "cache implementation" -n 20
 ```
 
-### 3. 解释代码（RAG 增强）
+### 3. Explain Code (RAG Enhanced)
 ```bash
-# 解释功能
-./codebase-agent-rag explain "这个项目是如何实现用户认证的？"
-./codebase-agent-rag explain "数据库事务是如何处理的？"
+# Explain features
+./codebase-agent-rag explain "How does this project implement user authentication?"
+./codebase-agent-rag explain "How are database transactions handled?"
 
-# 使用更多搜索结果
-./codebase-agent-rag explain "性能优化策略" -n 15
+# Use more search results
+./codebase-agent-rag explain "performance optimization strategies" -n 15
 ```
 
-### 4. 修改代码（上下文增强）
+### 4. Modify Code (Context Enhanced)
 ```bash
-# 修改文件
-./codebase-agent-rag modify app.py "添加请求限流功能"
+# Modify file
+./codebase-agent-rag modify app.py "Add request rate limiting feature"
 
-# 预览模式
-./codebase-agent-rag modify config.py "添加 Redis 配置" --dry-run
+# Preview mode
+./codebase-agent-rag modify config.py "Add Redis configuration" --dry-run
 ```
 
-### 5. 交互式分析
+### 5. Interactive Analysis
 ```bash
-# 进入交互模式
+# Enter interactive mode
 ./codebase-agent-rag chat
 
-# 交互模式命令:
-# /stats - 显示索引统计
-# /help - 显示帮助
-# /clear - 清屏
+# Interactive mode commands:
+# /stats - Show index statistics
+# /help - Show help
+# /clear - Clear screen
 ```
 
-## 🛠️ Makefile 构建系统
+## 🛠️ Makefile Build System
 
-项目提供了便捷的 Makefile 来简化开发和测试流程。所有命令都会自动激活虚拟环境。
+The project provides a convenient Makefile to simplify development and testing workflows. All commands will automatically activate the virtual environment.
 
-### 基本命令
+### Basic Commands
 
 ```bash
-# 显示所有可用命令
+# Show all available commands
 make help
 
-# 完整构建流程（建立索引）
+# Complete build process (build index)
 make build
 
-# 运行所有测试
+# Run all tests
 make test
 
-# 清理临时文件
+# Clean temporary files
 make clean
 
-# 安装依赖
+# Install dependencies
 make deps
 
-# 检查 Ollama 服务状态
+# Check Ollama service status
 make ollama
 ```
 
-### 测试命令
+### Test Commands
 
 ```bash
-# 运行 RAG 决策测试
+# Run RAG decision tests
 make test-rag
 
-# 运行 LLM 判断测试
+# Run LLM judgment tests
 make test-llm
 
-# 运行改进后的 RAG 测试
+# Run improved RAG tests
 make test-improved
 
-# 快速测试（基本测试 + 语法检查 + 导入测试）
+# Quick test (basic test + syntax check + import test)
 make quick-test
 ```
 
-### 代码质量检查
+### Code Quality Checks
 
 ```bash
-# 语法检查
+# Syntax check
 make syntax
 
-# 导入测试
+# Import test
 make imports
 ```
 
-### 开发和调试
+### Development and Debugging
 
 ```bash
-# 交互式测试（聊天模式）
+# Interactive test (chat mode)
 make interactive
 
-# 调试特定查询
-make debug QUERY="如何实现用户认证功能？"
+# Debug specific query
+make debug QUERY="How to implement user authentication feature?"
 
-# 开发模式（清理 + 测试）
+# Development mode (clean + test)
 make dev
 
-# 完整设置（依赖 + Ollama + 语法 + 导入）
+# Complete setup (dependencies + Ollama + syntax + imports)
 make setup
 ```
 
-### 命令说明
+### Command Description
 
-| 命令 | 功能 | 说明 |
-|------|------|------|
-| `make build` | 建立代码库索引 | 运行 `codebase_agent_rag.py index` |
-| `make test` | 运行完整测试套件 | 包括 RAG 决策和 LLM 判断测试 |
-| `make test-rag` | RAG 决策测试 | 测试 RAG 功能是否正常工作 |
-| `make test-llm` | LLM 判断测试 | 测试 LLM 判断功能 |
-| `make syntax` | 语法检查 | 检查 Python 文件语法正确性 |
-| `make imports` | 导入测试 | 验证所有模块可以正常导入 |
-| `make clean` | 清理文件 | 删除缓存和临时文件 |
-| `make deps` | 安装依赖 | 安装 requirements_rag.txt 中的依赖 |
-| `make ollama` | 检查服务 | 验证 Ollama 服务是否运行 |
-| `make build` | 建立索引 | 使用 Ollama 嵌入模型建立代码库索引 |
-| `make interactive` | 交互模式 | 启动聊天模式进行代码分析 |
-| `make debug` | 调试查询 | 需要提供 QUERY 参数 |
+| Command | Function | Description |
+|---------|----------|-------------|
+| `make build` | Build codebase index | Run `codebase_agent_rag.py index` |
+| `make test` | Run complete test suite | Include RAG decision and LLM judgment tests |
+| `make test-rag` | RAG decision test | Test if RAG functionality works properly |
+| `make test-llm` | LLM judgment test | Test LLM judgment functionality |
+| `make syntax` | Syntax check | Check Python file syntax correctness |
+| `make imports` | Import test | Verify all modules can be imported properly |
+| `make clean` | Clean files | Delete cache and temporary files |
+| `make deps` | Install dependencies | Install dependencies from requirements_rag.txt |
+| `make ollama` | Check service | Verify if Ollama service is running |
+| `make build` | Build index | Build codebase index using Ollama embedding model |
+| `make interactive` | Interactive mode | Start chat mode for code analysis |
+| `make debug` | Debug query | Requires QUERY parameter |
 
-### 使用示例
+### Usage Examples
 
 ```bash
-# 首次设置项目
+# First time project setup
 make setup
 
-# 日常开发流程
+# Daily development workflow
 make clean
 make test
 make syntax
 
-# 调试特定问题
-make debug QUERY="数据库连接失败的原因是什么？"
+# Debug specific issues
+make debug QUERY="What is the cause of database connection failure?"
 
-# 快速验证
+# Quick validation
 make quick-test
 ```
 
-### 注意事项
+### Notes
 
-- 所有命令都会自动激活 `venv_rag` 虚拟环境
-- 测试命令使用预设的示例查询，无需手动输入
-- `make debug` 需要提供 `QUERY` 参数才能运行
-- `make setup` 会执行完整的项目初始化流程
+- All commands automatically activate the `venv_rag` virtual environment
+- Test commands use preset example queries, no manual input required
+- `make debug` requires providing the `QUERY` parameter to run
+- `make setup` executes the complete project initialization process
 
-## 工作原理
+## How It Works
 
-### 1. 代码解析
-- 使用 AST 解析 Python 代码，识别函数和类
-- 智能分块，保持代码结构完整性
-- 提取文档字符串和元数据
+### 1. Code Parsing
+- Use AST to parse Python code, identify functions and classes
+- Smart chunking to maintain code structure integrity
+- Extract docstrings and metadata
 
-### 2. 向量化索引
-- 使用 Sentence Transformers 生成代码嵌入
-- ChromaDB 存储向量和元数据
-- 余弦相似度计算相关性
+### 2. Vector Indexing
+- Use Sentence Transformers to generate code embeddings
+- ChromaDB stores vectors and metadata
+- Cosine similarity calculates relevance
 
-### 3. RAG 流程
+### 3. RAG Process
 ```
-用户查询 -> 向量化 -> 搜索相似代码 -> 构建上下文 -> LLM 生成答案
+User Query -> Vectorize -> Search Similar Code -> Build Context -> LLM Generate Answer
 ```
 
-## 高级功能
+## Advanced Features
 
-### 查看索引统计
+### View Index Statistics
 ```bash
 ./codebase-agent-rag stats
 ```
 
-### 列出已索引文件
+### List Indexed Files
 ```bash
 ./codebase-agent-rag list-files
 ```
 
-### 清除索引
+### Clear Index
 ```bash
 ./codebase-agent-rag clear
 ```
 
-### 使用不同模型
+### Use Different Models
 ```bash
-# 使用 Mistral
-./codebase-agent-rag --model mistral explain "代码架构"
+# Use Mistral
+./codebase-agent-rag --model mistral explain "code architecture"
 
-# 使用 CodeLlama
-./codebase-agent-rag --model codellama search "设计模式"
+# Use CodeLlama
+./codebase-agent-rag --model codellama search "design patterns"
 
-# 使用 Devstral (支持嵌入)
-./codebase-agent-rag --model devstral search "用户认证"
+# Use Devstral (supports embedding)
+./codebase-agent-rag --model devstral search "user authentication"
 ```
 
-### 嵌入模型支持
+### Embedding Model Support
 
-项目现在支持使用 Ollama 模型进行文本嵌入，提供更好的语义搜索能力：
+The project now supports using Ollama models for text embedding, providing better semantic search capabilities:
 
-- **Devstral**: 支持 5120 维嵌入向量，提供高质量的语义理解
-- **Nomic Embed**: 专门的嵌入模型，优化用于文本相似度计算
-- **自动回退**: 如果 Ollama 模型不支持嵌入，会自动回退到 SentenceTransformer
+- **Devstral**: Supports 5120-dimensional embedding vectors, providing high-quality semantic understanding
+- **Nomic Embed**: Specialized embedding model optimized for text similarity computation
+- **Automatic Fallback**: If Ollama model doesn't support embedding, automatically falls back to SentenceTransformer
 
-使用 Ollama 嵌入的优势：
-- **一致性**: 使用相同的模型进行生成和嵌入，确保语义一致性
-- **本地化**: 完全本地运行，保护代码隐私
-- **性能**: 针对代码理解优化的嵌入向量
+Advantages of using Ollama embedding:
+- **Consistency**: Use the same model for generation and embedding, ensuring semantic consistency
+- **Local**: Runs completely locally, protecting code privacy
+- **Performance**: Embedding vectors optimized for code understanding
 
-## 性能优化
+## Performance Optimization
 
-### 1. 索引优化
-- **增量更新**: 只索引修改的文件
-- **并行处理**: 自动使用多核处理
-- **智能分块**: 根据代码结构优化块大小
+### 1. Index Optimization
+- **Incremental Updates**: Only index modified files
+- **Parallel Processing**: Automatically use multi-core processing
+- **Smart Chunking**: Optimize chunk size based on code structure
 
-### 2. 搜索优化
-- **向量缓存**: 减少重复计算
-- **预过滤**: 基于文件类型和路径优化搜索
-- **相关度阈值**: 只返回高相关度结果
+### 2. Search Optimization
+- **Vector Caching**: Reduce duplicate calculations
+- **Pre-filtering**: Optimize search based on file types and paths
+- **Relevance Threshold**: Only return high relevance results
 
-### 3. 内存优化
-- **流式处理**: 大文件分批处理
-- **按需加载**: 只加载必要的代码片段
-- **垃圾回收**: 自动清理未使用的数据
+### 3. Memory Optimization
+- **Stream Processing**: Process large files in batches
+- **On-demand Loading**: Only load necessary code snippets
+- **Garbage Collection**: Automatically clean unused data
 
-## 常见问题
+## FAQ
 
-**Q: 索引需要多长时间？**
-A: 取决于代码库大小。1000 个文件约需 2-5 分钟。
+**Q: How long does indexing take?**
+A: Depends on codebase size. About 2-5 minutes for 1000 files.
 
-**Q: 索引占用多少空间？**
-A: 通常是代码库大小的 20-50%。
+**Q: How much space does the index occupy?**
+A: Usually 20-50% of the codebase size.
 
-**Q: 如何更新索引？**
-A: 再次运行 `index` 命令会自动增量更新。
+**Q: How to update the index?**
+A: Running the `index` command again will automatically perform incremental updates.
 
-**Q: 支持哪些编程语言？**
-A: 所有文本格式的编程语言。Python 有最佳支持。
+**Q: What programming languages are supported?**
+A: All text-format programming languages. Python has the best support.
 
-**Q: 可以索引多个项目吗？**
-A: 可以，使用不同的 `--index-dir` 参数。
+**Q: Can multiple projects be indexed?**
+A: Yes, use different `--index-dir` parameters.
 
-## 与基础版本对比
+## Comparison with Base Version
 
-| 功能 | 基础版本 | RAG 版本 |
-|------|---------|----------|
-| 代码搜索 | 关键词匹配 | 语义搜索 |
-| 上下文大小 | 受限于 Token | 智能选择相关片段 |
-| 大型代码库 | 可能遗漏文件 | 完整索引 |
-| 搜索速度 | 每次扫描 | 毫秒级响应 |
-| 准确性 | 一般 | 高 |
+| Feature | Base Version | RAG Version |
+|---------|-------------|-------------|
+| Code Search | Keyword matching | Semantic search |
+| Context Size | Limited by Token | Smart selection of relevant snippets |
+| Large Codebase | May miss files | Complete indexing |
+| Search Speed | Scan each time | Millisecond response |
+| Accuracy | General | High |
 
-## 故障排除
+## Troubleshooting
 
-### Ollama 连接失败
+### Ollama Connection Failed
 ```bash
-# 检查 Ollama 状态
+# Check Ollama status
 curl http://localhost:11434/api/tags
 
-# 重启 Ollama
+# Restart Ollama
 ollama serve
 ```
 
-### 内存不足
-- 减少批处理大小
-- 使用更小的嵌入模型
-- 清理未使用的索引
+### Memory Insufficient
+- Reduce batch processing size
+- Use smaller embedding models
+- Clean unused indices
 
-### 索引错误
+### Index Errors
 ```bash
-# 清除损坏的索引
+# Clear corrupted index
 ./codebase-agent-rag clear -y
 
-# 重新索引
+# Re-index
 ./codebase-agent-rag index --force
 ```
-## DEBUG 工具
+## DEBUG Tools
 
-● 现在您可以使用这些调试工具来查看索引的详细信息：
+● You can now use these debugging tools to view detailed index information:
 
-  1. 查看所有检查（推荐先用这个）：
+  1. View all checks (recommended to use this first):
   python debug_utilities.py all
 
-  2. 检查集合基本信息：
+  2. Check collection basic information:
   python debug_utilities.py inspect
 
-  3. 查看样本文档：
+  3. View sample documents:
   python debug_utilities.py samples --limit 10
 
-  4. 分析文件分布：
+  4. Analyze file distribution:
   python debug_utilities.py distribution
 
-  5. 调试搜索功能：
+  5. Debug search functionality:
   python debug_utilities.py search-debug "your query"
 
-  6. 查看文件哈希缓存：
+  6. View file hash cache:
   python debug_utilities.py hashes
 
-  7. 验证索引完整性：
+  7. Validate index integrity:
   python debug_utilities.py validate
 
-  8. 导出索引数据到 JSON：
+  8. Export index data to JSON:
   python debug_utilities.py export --output my_index.json
 
-  这些工具可以帮助您：
-  - 查看索引中有多少文档和文件
-  - 检查元数据字段是否正确
-  - 验证搜索功能是否正常工作
-  - 发现索引中的问题
-  - 导出数据进行进一步分析
+  These tools can help you:
+  - View how many documents and files are in the index
+  - Check if metadata fields are correct
+  - Verify if search functionality works properly
+  - Discover issues in the index
+  - Export data for further analysis
 
-  试试运行 python debug_utilities.py all 来获得完整的索引概览！
+  Try running python debug_utilities.py all to get a complete index overview!
 
 
-## 开发路线图
+## Development Roadmap
 
-- [ ] 支持更多编程语言的 AST 解析
-- [ ] 代码依赖关系图
-- [ ] Git 历史集成
-- [ ] 多项目联合搜索
-- [ ] Web UI 界面
-- [ ] 团队协作功能
+- [ ] Support AST parsing for more programming languages
+- [ ] Code dependency relationship graph
+- [ ] Git history integration
+- [ ] Multi-project joint search
+- [ ] Web UI interface
+- [ ] Team collaboration features
 
-## 贡献
+## Contributing
 
-欢迎提交 Issue 和 Pull Request！
+Welcome to submit Issues and Pull Requests!

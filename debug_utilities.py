@@ -25,45 +25,45 @@ class IndexDebugger:
         self.agent = CodebaseAgentRAG(index_dir=index_dir)
     
     def inspect_collection(self):
-        """检查 ChromaDB 集合的详细信息"""
-        console.print("[bold cyan]ChromaDB 集合详细信息[/bold cyan]")
+        """check ChromaDB collection details"""
+        console.print("[bold cyan]ChromaDB collection details[/bold cyan]")
         
         try:
             collection = self.agent.rag.collection
             count = collection.count()
             
-            console.print(f"集合名称: {collection.name}")
-            console.print(f"文档总数: {count}")
+            console.print(f"collection name: {collection.name}")
+            console.print(f"total documents: {count}")
             
             if count > 0:
-                # 获取所有文档
+                # get all documents
                 all_docs = collection.get(limit=count)
                 
-                console.print(f"IDs 数量: {len(all_docs['ids'])}")
-                console.print(f"Documents 数量: {len(all_docs['documents'])}")
-                console.print(f"Metadatas 数量: {len(all_docs['metadatas'])}")
+                console.print(f"IDs count: {len(all_docs['ids'])}")
+                console.print(f"Documents count: {len(all_docs['documents'])}")
+                console.print(f"Metadatas count: {len(all_docs['metadatas'])}")
                 
-                # 分析元数据字段
+                # analyze metadata fields
                 if all_docs['metadatas']:
                     metadata_fields = set()
                     for metadata in all_docs['metadatas']:
                         metadata_fields.update(metadata.keys())
                     
-                    console.print(f"元数据字段: {sorted(metadata_fields)}")
+                    console.print(f"metadata fields: {sorted(metadata_fields)}")
                 
         except Exception as e:
-            console.print(f"[red]错误: {e}[/red]")
+            console.print(f"[red]error: {e}[/red]")
     
     def show_sample_documents(self, limit: int = 5):
-        """显示样本文档"""
-        console.print(f"[bold cyan]样本文档 (前 {limit} 个)[/bold cyan]")
+        """show sample documents"""
+        console.print(f"[bold cyan]sample documents (first {limit} documents)[/bold cyan]")
         
         try:
             collection = self.agent.rag.collection
             count = collection.count()
             
             if count == 0:
-                console.print("[yellow]没有文档[/yellow]")
+                console.print("[yellow]no documents[/yellow]")
                 return
             
             sample_docs = collection.get(limit=min(limit, count))
@@ -73,42 +73,42 @@ class IndexDebugger:
                 content = sample_docs['documents'][i]
                 metadata = sample_docs['metadatas'][i]
                 
-                console.print(f"\n[bold green]文档 {i+1}:[/bold green]")
+                console.print(f"\n[bold green]document {i+1}:[/bold green]")
                 console.print(f"ID: {doc_id}")
                 
-                # 显示元数据
-                metadata_table = Table(title="元数据")
-                metadata_table.add_column("字段", style="cyan")
-                metadata_table.add_column("值", style="yellow")
+                # show metadata
+                metadata_table = Table(title="metadata")
+                metadata_table.add_column("field", style="cyan")
+                metadata_table.add_column("value", style="yellow")
                 
                 for key, value in metadata.items():
                     metadata_table.add_row(key, str(value))
                 
                 console.print(metadata_table)
                 
-                # 显示内容预览
+                # show content preview
                 preview = content[:200] + "..." if len(content) > 200 else content
                 syntax = Syntax(preview, "python", theme="monokai", line_numbers=False)
-                console.print(Panel(syntax, title="内容预览", border_style="dim"))
+                console.print(Panel(syntax, title="content preview", border_style="dim"))
         
         except Exception as e:
-            console.print(f"[red]错误: {e}[/red]")
+            console.print(f"[red]error: {e}[/red]")
     
     def analyze_file_distribution(self):
-        """分析文件分布"""
-        console.print("[bold cyan]文件分布分析[/bold cyan]")
+        """analyze file distribution"""
+        console.print("[bold cyan]file distribution analysis[/bold cyan]")
         
         try:
             collection = self.agent.rag.collection
             count = collection.count()
             
             if count == 0:
-                console.print("[yellow]没有文档[/yellow]")
+                console.print("[yellow]no documents[/yellow]")
                 return
             
             all_docs = collection.get(limit=count)
             
-            # 统计文件分布
+            # count file distribution
             file_chunks = {}
             chunk_types = {}
             
@@ -119,20 +119,20 @@ class IndexDebugger:
                 file_chunks[file_path] = file_chunks.get(file_path, 0) + 1
                 chunk_types[chunk_type] = chunk_types.get(chunk_type, 0) + 1
             
-            # 显示文件分布
-            file_table = Table(title="文件代码块分布")
-            file_table.add_column("文件路径", style="cyan")
-            file_table.add_column("代码块数", justify="right", style="green")
+            # show file distribution
+            file_table = Table(title="file code chunk distribution")
+            file_table.add_column("file path", style="cyan")
+            file_table.add_column("code chunk count", justify="right", style="green")
             
             for file_path, count in sorted(file_chunks.items(), key=lambda x: x[1], reverse=True):
                 file_table.add_row(file_path, str(count))
             
             console.print(file_table)
             
-            # 显示代码块类型分布
-            type_table = Table(title="代码块类型分布")
-            type_table.add_column("类型", style="cyan")
-            type_table.add_column("数量", justify="right", style="green")
+            # show code chunk type distribution
+            type_table = Table(title="code chunk type distribution")
+            type_table.add_column("type", style="cyan")
+            type_table.add_column("count", justify="right", style="green")
             
             for chunk_type, count in sorted(chunk_types.items(), key=lambda x: x[1], reverse=True):
                 type_table.add_row(chunk_type, str(count))
@@ -140,53 +140,53 @@ class IndexDebugger:
             console.print(type_table)
             
         except Exception as e:
-            console.print(f"[red]错误: {e}[/red]")
+            console.print(f"[red]error: {e}[/red]")
     
     def search_debug(self, query: str, n_results: int = 5):
-        """调试搜索功能"""
-        console.print(f"[bold cyan]搜索调试: {query}[/bold cyan]")
+        """debug search functionality"""
+        console.print(f"[bold cyan]search debug: {query}[/bold cyan]")
         
         try:
-            # 执行搜索
+            # execute search
             results = self.agent.rag.search(query, n_results=n_results)
             
             if not results:
-                console.print("[yellow]没有搜索结果[/yellow]")
+                console.print("[yellow]no search results[/yellow]")
                 return
             
-            console.print(f"找到 {len(results)} 个结果")
+            console.print(f"found {len(results)} results")
             
             for i, result in enumerate(results):
-                console.print(f"\n[bold green]结果 {i+1}:[/bold green]")
+                console.print(f"\n[bold green]result {i+1}:[/bold green]")
                 console.print(f"ID: {result['id']}")
-                console.print(f"相关度分数: {1 - result['distance']:.4f}")
-                console.print(f"距离: {result['distance']:.4f}")
+                console.print(f"similarity score: {1 - result['distance']:.4f}")
+                console.print(f"distance: {result['distance']:.4f}")
                 
-                # 显示元数据
+                # show metadata
                 metadata = result['metadata']
-                console.print(f"文件: {metadata.get('file_path', 'N/A')}")
-                console.print(f"行数: {metadata.get('start_line', 'N/A')}-{metadata.get('end_line', 'N/A')}")
-                console.print(f"类型: {metadata.get('chunk_type', 'N/A')}")
+                console.print(f"file: {metadata.get('file_path', 'N/A')}")
+                console.print(f"line number: {metadata.get('start_line', 'N/A')}-{metadata.get('end_line', 'N/A')}")
+                console.print(f"type: {metadata.get('chunk_type', 'N/A')}")
                 if metadata.get('name'):
-                    console.print(f"名称: {metadata['name']}")
+                    console.print(f"name: {metadata['name']}")
                 
-                # 显示内容预览
+                # show content preview
                 content = result['content']
                 preview = content[:150] + "..." if len(content) > 150 else content
                 syntax = Syntax(preview, "python", theme="monokai", line_numbers=False)
-                console.print(Panel(syntax, title="内容", border_style="dim"))
+                console.print(Panel(syntax, title="content", border_style="dim"))
         
         except Exception as e:
-            console.print(f"[red]错误: {e}[/red]")
+            console.print(f"[red]error: {e}[/red]")
     
     def show_file_hashes(self):
-        """显示文件哈希缓存"""
-        console.print("[bold cyan]文件哈希缓存[/bold cyan]")
+        """show file hash cache"""
+        console.print("[bold cyan]file hash cache[/bold cyan]")
         
         hash_file = self.agent.rag.hash_cache_file
         
         if not hash_file.exists():
-            console.print("[yellow]哈希缓存文件不存在[/yellow]")
+            console.print("[yellow]file hash cache file not found[/yellow]")
             return
         
         try:
@@ -194,39 +194,39 @@ class IndexDebugger:
                 hashes = json.load(f)
             
             if not hashes:
-                console.print("[yellow]哈希缓存为空[/yellow]")
+                console.print("[yellow]file hash cache is empty[/yellow]")
                 return
             
-            hash_table = Table(title="文件哈希")
-            hash_table.add_column("文件路径", style="cyan")
-            hash_table.add_column("MD5 哈希", style="yellow")
+            hash_table = Table(title="file hash")
+            hash_table.add_column("file path", style="cyan")
+            hash_table.add_column("MD5 hash", style="yellow")
             
             for file_path, file_hash in sorted(hashes.items()):
                 hash_table.add_row(file_path, file_hash)
             
             console.print(hash_table)
-            console.print(f"\n总计: {len(hashes)} 个文件")
+            console.print(f"\ntotal files: {len(hashes)}")
             
         except Exception as e:
-            console.print(f"[red]错误: {e}[/red]")
+            console.print(f"[red]error: {e}[/red]")
     
     def validate_index_integrity(self):
-        """验证索引完整性"""
-        console.print("[bold cyan]索引完整性检查[/bold cyan]")
+        """validate index integrity"""
+        console.print("[bold cyan]validate index integrity[/bold cyan]")
         
         try:
             collection = self.agent.rag.collection
             count = collection.count()
             
             if count == 0:
-                console.print("[yellow]索引为空[/yellow]")
+                console.print("[yellow]index is empty[/yellow]")
                 return
             
             all_docs = collection.get(limit=count)
             
             issues = []
             
-            # 检查必需字段
+            # check required fields
             required_fields = ['file_path', 'start_line', 'end_line', 'chunk_type']
             
             for i, metadata in enumerate(all_docs['metadatas']):
@@ -234,38 +234,38 @@ class IndexDebugger:
                 
                 for field in required_fields:
                     if field not in metadata:
-                        issues.append(f"文档 {doc_id}: 缺少字段 '{field}'")
+                        issues.append(f"document {doc_id}: missing field '{field}'")
                 
-                # 检查行号是否合理
+                # check line number is reasonable
                 start_line = metadata.get('start_line')
                 end_line = metadata.get('end_line')
                 
                 if start_line and end_line:
                     if start_line > end_line:
-                        issues.append(f"文档 {doc_id}: 起始行 {start_line} > 结束行 {end_line}")
+                        issues.append(f"document {doc_id}: start line {start_line} > end line {end_line}")
                     if start_line < 1:
-                        issues.append(f"文档 {doc_id}: 起始行 {start_line} < 1")
+                        issues.append(f"document {doc_id}: start line {start_line} < 1")
             
             if issues:
-                console.print(f"[red]发现 {len(issues)} 个问题:[/red]")
+                console.print(f"[red]found {len(issues)} issues:[/red]")
                 for issue in issues:
                     console.print(f"  • {issue}")
             else:
-                console.print("[green]索引完整性检查通过[/green]")
+                console.print("[green]index integrity check passed[/green]")
                 
         except Exception as e:
-            console.print(f"[red]错误: {e}[/red]")
+            console.print(f"[red]error: {e}[/red]")
     
     def export_index_data(self, output_file: str = "index_export.json"):
-        """导出索引数据到 JSON 文件"""
-        console.print(f"[bold cyan]导出索引数据到 {output_file}[/bold cyan]")
+        """export index data to JSON file"""
+        console.print(f"[bold cyan]export index data to {output_file}[/bold cyan]")
         
         try:
             collection = self.agent.rag.collection
             count = collection.count()
             
             if count == 0:
-                console.print("[yellow]没有数据可导出[/yellow]")
+                console.print("[yellow]no data to export[/yellow]")
                 return
             
             all_docs = collection.get(limit=count)
@@ -287,15 +287,15 @@ class IndexDebugger:
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(export_data, f, ensure_ascii=False, indent=2)
             
-            console.print(f"[green]成功导出 {count} 个文档到 {output_file}[/green]")
+            console.print(f"[green]successfully exported {count} documents to {output_file}[/green]")
             
         except Exception as e:
-            console.print(f"[red]错误: {e}[/red]")
+            console.print(f"[red]error: {e}[/red]")
 
 
-# CLI 命令
+# CLI commands
 @click.group()
-@click.option('--index-dir', default='.codebase_index', help='索引目录')
+@click.option('--index-dir', default='.codebase_index', help='index directory')
 @click.pass_context
 def debug_cli(ctx, index_dir):
     """Debug utilities for codebase index"""
@@ -305,61 +305,61 @@ def debug_cli(ctx, index_dir):
 @debug_cli.command()
 @click.pass_obj
 def inspect(debugger):
-    """检查集合详细信息"""
+    """check collection details"""
     debugger.inspect_collection()
 
 
 @debug_cli.command()
-@click.option('--limit', '-l', default=5, help='显示文档数量')
+@click.option('--limit', '-l', default=5, help='number of documents to show')
 @click.pass_obj
 def samples(debugger, limit):
-    """显示样本文档"""
+    """show sample documents"""
     debugger.show_sample_documents(limit)
 
 
 @debug_cli.command()
 @click.pass_obj
 def distribution(debugger):
-    """分析文件分布"""
+    """analyze file distribution"""
     debugger.analyze_file_distribution()
 
 
 @debug_cli.command()
 @click.argument('query')
-@click.option('--results', '-n', default=5, help='搜索结果数量')
+@click.option('--results', '-n', default=5, help='number of search results')
 @click.pass_obj
 def search_debug(debugger, query, results):
-    """调试搜索功能"""
+    """debug search functionality"""
     debugger.search_debug(query, results)
 
 
 @debug_cli.command()
 @click.pass_obj
 def hashes(debugger):
-    """显示文件哈希缓存"""
+    """show file hash cache"""
     debugger.show_file_hashes()
 
 
 @debug_cli.command()
 @click.pass_obj
 def validate(debugger):
-    """验证索引完整性"""
+    """validate index integrity"""
     debugger.validate_index_integrity()
 
 
 @debug_cli.command()
-@click.option('--output', '-o', default='index_export.json', help='输出文件名')
+@click.option('--output', '-o', default='index_export.json', help='output file name')
 @click.pass_obj
 def export(debugger, output):
-    """导出索引数据"""
+    """export index data"""
     debugger.export_index_data(output)
 
 
 @debug_cli.command()
 @click.pass_obj
 def all(debugger):
-    """运行所有检查"""
-    console.print("[bold yellow]运行所有检查...[/bold yellow]\n")
+    """run all checks"""
+    console.print("[bold yellow]running all checks...[/bold yellow]\n")
     
     debugger.inspect_collection()
     console.print("\n" + "="*50 + "\n")
