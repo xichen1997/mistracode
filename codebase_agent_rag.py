@@ -28,7 +28,7 @@ console = Console()
 class OllamaClient:
     """Ollama API 客户端"""
     
-    def __init__(self, base_url: str = "http://localhost:11434", model: str = "devstral:latest"):
+    def __init__(self, base_url: str = "http://localhost:11434", model: str = "devstral:24b"):
         self.base_url = base_url
         self.model = model
         
@@ -279,13 +279,21 @@ class CodeParser:
 class CodebaseRAG:
     """基于 RAG 的代码库管理系统"""
     
-    def __init__(self, persist_dir: str = ".codebase_index"):
+    def __init__(self, persist_dir: str = ".codebase_index", ollama_client: OllamaClient = None):
         self.persist_dir = Path(persist_dir)
         self.persist_dir.mkdir(exist_ok=True)
         
         # 初始化嵌入模型
-        console.print("[cyan]正在加载嵌入模型...[/cyan]")
-        self.embedder = SentenceTransformer('all-MiniLM-L6-v2')
+        if ollama_client:
+            # 使用 Ollama 进行嵌入
+            console.print("[cyan]使用 Ollama 进行嵌入...[/cyan]")
+            self.embedder = ollama_client
+            self.use_ollama = True
+        else:
+            # 回退到 SentenceTransformer
+            console.print("[cyan]正在加载嵌入模型...[/cyan]")
+            self.embedder = SentenceTransformer('all-MiniLM-L6-v2')
+            self.use_ollama = False
         
         # 初始化向量数据库
         self.chroma_client = chromadb.PersistentClient(
@@ -327,7 +335,15 @@ class CodebaseRAG:
     
     def _embed_text(self, text: str) -> List[float]:
         """生成文本嵌入"""
-        return self.embedder.encode(text).tolist()
+        if self.use_ollama:
+            # 使用 Ollama 进行嵌入
+            embedding = self.embedder.embeddings(text)
+            if embedding is None:
+                raise Exception("Ollama 模型不支持嵌入功能")
+            return embedding
+        else:
+            # 使用 SentenceTransformer 进行嵌入
+            return self.embedder.encode(text).tolist()
     
     def index_file(self, file_path: str, content: str):
         """索引单个文件"""
@@ -438,12 +454,12 @@ class CodebaseRAG:
 class CodebaseAgentRAG:
     """支持 RAG 的代码库智能助手"""
     
-    def __init__(self, model: str = "devstral:latest", 
+    def __init__(self, model: str = "devstral:24b", 
                  base_url: str = "http://localhost:11434",
                  index_dir: str = ".codebase_index"):
         self.client = OllamaClient(base_url=base_url, model=model)
         self.model = model
-        self.rag = CodebaseRAG(persist_dir=index_dir)
+        self.rag = CodebaseRAG(persist_dir=index_dir, ollama_client=self.client)
         
         # 支持的文件扩展名
         self.supported_extensions = {
@@ -476,7 +492,7 @@ class CodebaseAgentRAG:
             models = self.client.list_models()
             if not models:
                 console.print("[yellow]警告: Ollama 中没有安装任何模型[/yellow]")
-                console.print("[cyan]请运行: ollama pull devstral:latest[/cyan]")
+                console.print("[cyan]请运行: ollama pull devstral:24b[/cyan]")
             elif self.model not in models:
                 console.print(f"[yellow]警告: 模型 {self.model} 未安装[/yellow]")
                 console.print(f"[cyan]可用模型: {', '.join(models)}[/cyan]")
@@ -845,7 +861,7 @@ class CodebaseAgentRAG:
 
 # CLI 部分
 @click.group()
-@click.option('--model', '-m', default='devstral:latest', help='Ollama 模型名称')
+@click.option('--model', '-m', default='devstral:24b', help='Ollama 模型名称')
 @click.option('--base-url', default='http://localhost:11434', help='Ollama API 地址')
 @click.option('--index-dir', default='.codebase_index', help='索引存储目录')
 @click.pass_context

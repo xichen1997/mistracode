@@ -199,6 +199,7 @@ make setup
 | `make clean` | 清理文件 | 删除缓存和临时文件 |
 | `make deps` | 安装依赖 | 安装 requirements_rag.txt 中的依赖 |
 | `make ollama` | 检查服务 | 验证 Ollama 服务是否运行 |
+| `make build` | 建立索引 | 使用 Ollama 嵌入模型建立代码库索引 |
 | `make interactive` | 交互模式 | 启动聊天模式进行代码分析 |
 | `make debug` | 调试查询 | 需要提供 QUERY 参数 |
 
@@ -268,7 +269,23 @@ make quick-test
 
 # 使用 CodeLlama
 ./codebase-agent-rag --model codellama search "设计模式"
+
+# 使用 Devstral (支持嵌入)
+./codebase-agent-rag --model devstral search "用户认证"
 ```
+
+### 嵌入模型支持
+
+项目现在支持使用 Ollama 模型进行文本嵌入，提供更好的语义搜索能力：
+
+- **Devstral**: 支持 5120 维嵌入向量，提供高质量的语义理解
+- **Nomic Embed**: 专门的嵌入模型，优化用于文本相似度计算
+- **自动回退**: 如果 Ollama 模型不支持嵌入，会自动回退到 SentenceTransformer
+
+使用 Ollama 嵌入的优势：
+- **一致性**: 使用相同的模型进行生成和嵌入，确保语义一致性
+- **本地化**: 完全本地运行，保护代码隐私
+- **性能**: 针对代码理解优化的嵌入向量
 
 ## 性能优化
 
